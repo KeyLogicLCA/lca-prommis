@@ -1,4 +1,5 @@
 # README
+Find this resource on NETL's [Energy Data eXchange](https://edx.netl.doe.gov/dataset/lca-prommis)!
 
 ## Setup
 The instructions for setup are based on those found [here](https://idaes-pse.readthedocs.io/en/stable/tutorials/getting_started/mac_osx.html).
