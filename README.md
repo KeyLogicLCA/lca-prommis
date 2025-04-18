@@ -29,14 +29,6 @@ The instructions for setup are based on those found [here](https://idaes-pse.rea
 
 5. Install the extensions
 
-    On macOS
-
-    ```bash
-    idaes get-extensions
-    ```
-
-    On Windows 10
-
     ```bash
     idaes get-extensions --extra petsc
     ```
