@@ -87,6 +87,9 @@ from idaes.core.solvers import get_solver
 from idaes.core.base.var_like_expression import VarLikeExpression
 import idaes.logger as idaeslog
 
+# HOTFIX: add missing import [2025-04-23; TWD]
+from pyomo.core import Param
+
 
 @declare_process_block_class("AcidChannel")
 class AcidChannelData(UnitModelBlockData):
@@ -468,7 +471,6 @@ class AcidChannelData(UnitModelBlockData):
         @self.Constraint(tset, iznodes, comps)
         def diff_eff_coeff_eqn(b, t, iz, i):
             return b.diff_eff_coeff[t, iz, i] == 1.59e-9
-            )
 
         @self.Expression(tset, iznodes, comps)
         def mass_transfer_coeff(b, t, iz, i):
