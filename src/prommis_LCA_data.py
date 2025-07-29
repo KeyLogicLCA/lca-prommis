@@ -11,7 +11,7 @@ import prommis.uky.uky_flowsheet as uky
 def main():
     m, results = uky.main()
     df = get_lca_df(m)  
-    return m, df
+    return df
 
 def get_lca_df(m):
     """
@@ -594,7 +594,7 @@ def get_lca_df(m):
 
 
 if __name__ == "__main__":
-    m, df = main()
+    df = main()
     print(df)
     df.to_csv("lca_df.csv")
     warn(
