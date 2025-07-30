@@ -13,6 +13,7 @@ def main():
     df = get_lca_df(m)  
     return df
 
+
 def get_lca_df(m):
     """
     Create a pandas DataFrame with LCA-relevant flows organized for analysis.
@@ -136,7 +137,7 @@ def get_lca_df(m):
             flow.append(flow_name)
             source.append("Solid Feed")
             in_out.append("In")
-            category.append("Material")
+            category.append("Solid Input")
             value_1.append(solid_feed_mass)
             unit_1.append("kg/hr")
             value_2.append(mass_frac)
@@ -160,7 +161,7 @@ def get_lca_df(m):
         flow.append("Water")
         source.append("Liquid Feed")
         in_out.append("In")
-        category.append("Material")
+        category.append("Water")
         value_1.append(liquid_feed_vol)
         unit_1.append("L/hr")
         value_2.append(h2o_conc)
@@ -179,7 +180,7 @@ def get_lca_df(m):
         flow.append("Sulfuric Acid")
         source.append("Liquid Feed")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(liquid_feed_vol)
         unit_1.append("L/hr")
         value_2.append(total_acid_conc)
@@ -192,13 +193,18 @@ def get_lca_df(m):
     rougher_org_vol = safe_value(m.fs.rougher_org_make_up.flow_vol[0])
     
     # Kerosene
+    # Kerosene concentration in the new version does not load properly. This is the correct value.
     try:
         kerosene_conc = safe_value(m.fs.rougher_org_make_up.conc_mass_comp[0, "Kerosene"])
+    except Exception:
+        kerosene_conc = 8.2e5 * units.mg / units.L
+    
+    try:
         flow_id.append(current_id)
         flow.append("Kerosene")
         source.append("Rougher Organic Make-up")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(rougher_org_vol)
         unit_1.append("L/hr")
         value_2.append(kerosene_conc)
@@ -208,14 +214,19 @@ def get_lca_df(m):
         print(f"Error: could not process rougher organic make-up kerosene")
     
     # DEHPA
+    # DEHPA concentration in the new version does not load properly. This is the correct value.
     try:
         dehpa_conc = safe_value(m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"])
-        
+    except Exception:
+        dosage = 5
+        dehpa_conc = 975.8e3 * (dosage / 100) * units.mg / units.L
+    
+    try:
         flow_id.append(current_id)
         flow.append("DEHPA")
         source.append("Rougher Organic Make-up")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(rougher_org_vol)
         unit_1.append("L/hr")
         value_2.append(dehpa_conc)
@@ -230,11 +241,15 @@ def get_lca_df(m):
     # Kerosene
     try:
         kerosene_conc = safe_value(m.fs.cleaner_org_make_up.conc_mass_comp[0, "Kerosene"])
+    except Exception:
+        kerosene_conc = 8.2e5 * units.mg / units.L
+    
+    try:
         flow_id.append(current_id)
         flow.append("Kerosene")
         source.append("Cleaner Organic Make-up")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(cleaner_org_vol)
         unit_1.append("L/hr")
         value_2.append(kerosene_conc)
@@ -246,12 +261,16 @@ def get_lca_df(m):
     # DEHPA
     try:
         dehpa_conc = safe_value(m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"])
-        
+    except Exception:
+        dosage = 5
+        dehpa_conc = 975.8e3 * (dosage / 100) * units.mg / units.L
+    
+    try:
         flow_id.append(current_id)
         flow.append("DEHPA")
         source.append("Cleaner Organic Make-up")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(cleaner_org_vol)
         unit_1.append("L/hr")
         value_2.append(dehpa_conc)
@@ -270,7 +289,7 @@ def get_lca_df(m):
         flow.append("Water")
         source.append("Acid Feed 1")
         in_out.append("In")
-        category.append("Material")
+        category.append("Water")
         value_1.append(acid1_vol)
         unit_1.append("L/hr")
         value_2.append(h2o_conc)
@@ -289,7 +308,7 @@ def get_lca_df(m):
         flow.append("Hydrochloric Acid")
         source.append("Acid Feed 1")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(acid1_vol)
         unit_1.append("L/hr")
         value_2.append(total_acid_conc)
@@ -308,7 +327,7 @@ def get_lca_df(m):
         flow.append("Water")
         source.append("Acid Feed 2")
         in_out.append("In")
-        category.append("Material")
+        category.append("Water")
         value_1.append(acid2_vol)
         unit_1.append("L/hr")
         value_2.append(h2o_conc)
@@ -327,7 +346,7 @@ def get_lca_df(m):
         flow.append("Hydrochloric Acid")
         source.append("Acid Feed 2")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(acid2_vol)
         unit_1.append("L/hr")
         value_2.append(total_acid_conc)
@@ -346,7 +365,7 @@ def get_lca_df(m):
         flow.append("Water")
         source.append("Acid Feed 3")
         in_out.append("In")
-        category.append("Material")
+        category.append("Water")
         value_1.append(acid3_vol)
         unit_1.append("L/hr")
         value_2.append(h2o_conc)
@@ -365,7 +384,7 @@ def get_lca_df(m):
         flow.append("Hydrochloric Acid")
         source.append("Acid Feed 3")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(acid3_vol)
         unit_1.append("L/hr")
         value_2.append(total_acid_conc)
@@ -390,7 +409,7 @@ def get_lca_df(m):
                 flow.append("Electricity")
                 source.append(source_name)
                 in_out.append("In")
-                category.append("Energy")
+                category.append("Electricity")
                 value_1.append(power_val)
                 unit_1.append("hp")
                 value_2.append("")
@@ -417,7 +436,7 @@ def get_lca_df(m):
                 flow.append("Heat")
                 source.append(source_name)
                 in_out.append("In")
-                category.append("Energy")
+                category.append("Heat")
                 value_1.append(heat_val)
                 unit_1.append("W")
                 value_2.append("")
@@ -444,7 +463,7 @@ def get_lca_df(m):
                 flow.append(flow_name)
                 source.append("Roaster Product")
                 in_out.append("Out")
-                category.append("Product")
+                category.append("Solid Output")
                 value_1.append(product_mass)
                 unit_1.append("kg/hr")
                 value_2.append(mass_frac)
@@ -477,7 +496,7 @@ def get_lca_df(m):
             flow.append(flow_name)
             source.append("Roaster Emissions")
             in_out.append("Out")
-            category.append("Waste")
+            category.append("Emissions to air")
             value_1.append(total_flow)
             unit_1.append("mol/hr")
             value_2.append(mol_frac)
@@ -510,7 +529,7 @@ def get_lca_df(m):
                 flow.append(waste_name)
                 source.append("Process")
                 in_out.append("Out")
-                category.append("Waste")
+                category.append("Solid Waste")
                 value_1.append(waste_val)
                 unit_1.append(waste_unit)
                 value_2.append("")
@@ -540,7 +559,7 @@ def get_lca_df(m):
                 flow.append(waste_name)
                 source.append("Process")
                 in_out.append("Out")
-                category.append("Waste")
+                category.append("Wastewater")
                 value_1.append(waste_val)
                 unit_1.append("L/hr")
                 value_2.append("")
@@ -564,7 +583,7 @@ def get_lca_df(m):
                 flow.append(waste_name)
                 source.append("Process")
                 in_out.append("Out")
-                category.append("Waste")
+                category.append("Wastewater") # I don't like calling it wastewater, but it's the closest category we have
                 value_1.append(waste_val)
                 unit_1.append("L/hr")
                 value_2.append("")
