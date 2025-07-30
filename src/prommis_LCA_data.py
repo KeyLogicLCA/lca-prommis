@@ -400,8 +400,8 @@ def get_lca_df(m):
     # Calculated using ratio to sulfuric acid.
     try:
         total_sulfuric = total_sulfuric_conc * safe_value(m.fs.leach_liquid_feed.flow_vol[0]) * units.mg/units.hr
-        naoh_in = units.convert(total_sulfuric * 0.478/1.17, 
-                                to_units=units.kg/units.hr)
+        naoh_in = value(units.convert(total_sulfuric * 0.478/1.17, 
+                                to_units=units.kg/units.hr))
         flow_id.append(current_id)
         flow.append("Sodium Hydroxide")
         source.append("Acid Leaching")
@@ -422,8 +422,8 @@ def get_lca_df(m):
     # https://mykeylogic.sharepoint.com/:x:/r/sites/KL_PRJ_LCA-2300.203.014REEPreliminaryAssessment/_layouts/15/Doc.aspx?sourcedoc=%7BAD82A6A7-95D8-4408-B4E9-3ADB9E7024C8%7D&file=NETL%20UP%20Library%20Case%20Study%20Inventory.xlsx&action=default&mobileredirect=true
     # See cells O3:P5
     try:
-        oxalic_in = units.convert(total_sulfuric * 0.762/1.728723404, 
-                                to_units=units.kg/units.hr)
+        oxalic_in = value(units.convert(total_sulfuric * 0.762/1.728723404, 
+                                to_units=units.kg/units.hr))
         flow_id.append(current_id)
         flow.append("Oxalic Acid")
         source.append("Precipitation")
