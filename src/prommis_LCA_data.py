@@ -1,4 +1,6 @@
 # This script includes the functions to get the LCA data from the PrOMMiS flowsheet
+# Source for Sodium Hydroxide: https://netl.doe.gov/projects/files/DF_Stage1_O_Rare_Earth_Leaching_2014-01.pdf
+# Source for Oxalic Acid: https://netl.doe.gov/projects/files/DF_Stage1_O_Rare_earth_oxide_formation_2014-01.pdf
 
 import pandas as pd
 from pyomo.environ import (
@@ -12,6 +14,7 @@ def main():
     m, results = uky.main()
     df = get_lca_df(m)  
     return df
+
 
 def get_lca_df(m):
     """
@@ -136,7 +139,7 @@ def get_lca_df(m):
             flow.append(flow_name)
             source.append("Solid Feed")
             in_out.append("In")
-            category.append("Material")
+            category.append("Solid Input")
             value_1.append(solid_feed_mass)
             unit_1.append("kg/hr")
             value_2.append(mass_frac)
@@ -160,7 +163,7 @@ def get_lca_df(m):
         flow.append("Water")
         source.append("Liquid Feed")
         in_out.append("In")
-        category.append("Material")
+        category.append("Water")
         value_1.append(liquid_feed_vol)
         unit_1.append("L/hr")
         value_2.append(h2o_conc)
@@ -173,16 +176,16 @@ def get_lca_df(m):
     try:
         h_conc = safe_value(m.fs.leach_liquid_feed.conc_mass_comp[0, "H"])
         so4_conc = safe_value(m.fs.leach_liquid_feed.conc_mass_comp[0, "SO4"])
-        total_acid_conc = h_conc + so4_conc
+        total_sulfuric_conc = h_conc + so4_conc
         
         flow_id.append(current_id)
         flow.append("Sulfuric Acid")
         source.append("Liquid Feed")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(liquid_feed_vol)
         unit_1.append("L/hr")
-        value_2.append(total_acid_conc)
+        value_2.append(total_sulfuric_conc)
         unit_2.append("mg/L")
         current_id += 1
     except Exception:
@@ -192,13 +195,18 @@ def get_lca_df(m):
     rougher_org_vol = safe_value(m.fs.rougher_org_make_up.flow_vol[0])
     
     # Kerosene
+    # Kerosene concentration in the new version does not load properly. This is the correct value.
     try:
         kerosene_conc = safe_value(m.fs.rougher_org_make_up.conc_mass_comp[0, "Kerosene"])
+    except Exception:
+        kerosene_conc = 8.2e5 * units.mg / units.L
+    
+    try:
         flow_id.append(current_id)
         flow.append("Kerosene")
         source.append("Rougher Organic Make-up")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(rougher_org_vol)
         unit_1.append("L/hr")
         value_2.append(kerosene_conc)
@@ -208,14 +216,19 @@ def get_lca_df(m):
         print(f"Error: could not process rougher organic make-up kerosene")
     
     # DEHPA
+    # DEHPA concentration in the new version does not load properly. This is the correct value.
     try:
         dehpa_conc = safe_value(m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"])
-        
+    except Exception:
+        dosage = 5
+        dehpa_conc = 975.8e3 * (dosage / 100) * units.mg / units.L
+    
+    try:
         flow_id.append(current_id)
         flow.append("DEHPA")
         source.append("Rougher Organic Make-up")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(rougher_org_vol)
         unit_1.append("L/hr")
         value_2.append(dehpa_conc)
@@ -230,11 +243,15 @@ def get_lca_df(m):
     # Kerosene
     try:
         kerosene_conc = safe_value(m.fs.cleaner_org_make_up.conc_mass_comp[0, "Kerosene"])
+    except Exception:
+        kerosene_conc = 8.2e5 * units.mg / units.L
+    
+    try:
         flow_id.append(current_id)
         flow.append("Kerosene")
         source.append("Cleaner Organic Make-up")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(cleaner_org_vol)
         unit_1.append("L/hr")
         value_2.append(kerosene_conc)
@@ -246,12 +263,16 @@ def get_lca_df(m):
     # DEHPA
     try:
         dehpa_conc = safe_value(m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"])
-        
+    except Exception:
+        dosage = 5
+        dehpa_conc = 975.8e3 * (dosage / 100) * units.mg / units.L
+    
+    try:
         flow_id.append(current_id)
         flow.append("DEHPA")
         source.append("Cleaner Organic Make-up")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(cleaner_org_vol)
         unit_1.append("L/hr")
         value_2.append(dehpa_conc)
@@ -270,7 +291,7 @@ def get_lca_df(m):
         flow.append("Water")
         source.append("Acid Feed 1")
         in_out.append("In")
-        category.append("Material")
+        category.append("Water")
         value_1.append(acid1_vol)
         unit_1.append("L/hr")
         value_2.append(h2o_conc)
@@ -289,7 +310,7 @@ def get_lca_df(m):
         flow.append("Hydrochloric Acid")
         source.append("Acid Feed 1")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(acid1_vol)
         unit_1.append("L/hr")
         value_2.append(total_acid_conc)
@@ -308,7 +329,7 @@ def get_lca_df(m):
         flow.append("Water")
         source.append("Acid Feed 2")
         in_out.append("In")
-        category.append("Material")
+        category.append("Water")
         value_1.append(acid2_vol)
         unit_1.append("L/hr")
         value_2.append(h2o_conc)
@@ -327,7 +348,7 @@ def get_lca_df(m):
         flow.append("Hydrochloric Acid")
         source.append("Acid Feed 2")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(acid2_vol)
         unit_1.append("L/hr")
         value_2.append(total_acid_conc)
@@ -346,7 +367,7 @@ def get_lca_df(m):
         flow.append("Water")
         source.append("Acid Feed 3")
         in_out.append("In")
-        category.append("Material")
+        category.append("Water")
         value_1.append(acid3_vol)
         unit_1.append("L/hr")
         value_2.append(h2o_conc)
@@ -365,7 +386,7 @@ def get_lca_df(m):
         flow.append("Hydrochloric Acid")
         source.append("Acid Feed 3")
         in_out.append("In")
-        category.append("Material")
+        category.append("Chemicals")
         value_1.append(acid3_vol)
         unit_1.append("L/hr")
         value_2.append(total_acid_conc)
@@ -373,8 +394,50 @@ def get_lca_df(m):
         current_id += 1
     except Exception:
         print(f"Error: could not process acid feed 3 hydrochloric acid")
+        
+    # 8. Sodium Hydroxide
+    # Proxy based on NETL UP library acid leaching UP.
+    # Calculated using ratio to sulfuric acid.
+    try:
+        total_sulfuric = total_sulfuric_conc * safe_value(m.fs.leach_liquid_feed.flow_vol[0]) * units.mg/units.hr
+        naoh_in = value(units.convert(total_sulfuric * 0.478/1.17, 
+                                to_units=units.kg/units.hr))
+        flow_id.append(current_id)
+        flow.append("Sodium Hydroxide")
+        source.append("Acid Leaching")
+        in_out.append("In")
+        category.append("Chemicals")
+        value_1.append(naoh_in)
+        unit_1.append("kg/hr")
+        value_2.append("")
+        unit_2.append("")
+        current_id += 1
+    except Exception:
+        print(f"Error: could not process acid leaching sodium hydroxide")
     
-    # 8. Electricity streams
+    # 9. Oxalic Acid
+    # Proxy based on NETL UP library REO formation UP.
+    # Calculated using ratio to sulfuric acid. 
+    # Combined the REO formation and acid leaching product system to obtain this ratio.
+    # https://mykeylogic.sharepoint.com/:x:/r/sites/KL_PRJ_LCA-2300.203.014REEPreliminaryAssessment/_layouts/15/Doc.aspx?sourcedoc=%7BAD82A6A7-95D8-4408-B4E9-3ADB9E7024C8%7D&file=NETL%20UP%20Library%20Case%20Study%20Inventory.xlsx&action=default&mobileredirect=true
+    # See cells O3:P5
+    try:
+        oxalic_in = value(units.convert(total_sulfuric * 0.762/1.728723404, 
+                                to_units=units.kg/units.hr))
+        flow_id.append(current_id)
+        flow.append("Oxalic Acid")
+        source.append("Precipitation")
+        in_out.append("In")
+        category.append("Chemicals")
+        value_1.append(oxalic_in)
+        unit_1.append("kg/hr")
+        value_2.append("")
+        unit_2.append("")
+        current_id += 1
+    except Exception:
+        print(f"Error: could not process precipitation oxalic acid")
+    
+    # 10. Electricity streams
     electricity_sources = [
         ("Leach Mixer", getattr(m.fs.leach_mixer, 'power', None)),
         ("Rougher Mixer", getattr(m.fs.rougher_mixer, 'power', None)),
@@ -390,7 +453,7 @@ def get_lca_df(m):
                 flow.append("Electricity")
                 source.append(source_name)
                 in_out.append("In")
-                category.append("Energy")
+                category.append("Electricity")
                 value_1.append(power_val)
                 unit_1.append("hp")
                 value_2.append("")
@@ -399,7 +462,7 @@ def get_lca_df(m):
             except Exception:
                 print(f"Error: could not process {source_name} electricity")
     
-    # 9. Heat streams
+    # 11. Heat streams
     heat_sources = [
         ("Roaster", getattr(m.fs.roaster, 'heat_duty', None)),
         ("Solution Heater", getattr(m.fs, 'leach_solution_heater', None))
@@ -417,7 +480,7 @@ def get_lca_df(m):
                 flow.append("Heat")
                 source.append(source_name)
                 in_out.append("In")
-                category.append("Energy")
+                category.append("Heat")
                 value_1.append(heat_val)
                 unit_1.append("W")
                 value_2.append("")
@@ -426,7 +489,7 @@ def get_lca_df(m):
             except Exception:
                 print(f"Error: could not process {source_name} heat")
     
-    # 10. REE Product components
+    # 12. REE Product components
     try:
         product_mass = value(units.convert(m.fs.roaster.flow_mass_product[0], to_units=units.kg / units.hr))
         
@@ -444,7 +507,7 @@ def get_lca_df(m):
                 flow.append(flow_name)
                 source.append("Roaster Product")
                 in_out.append("Out")
-                category.append("Product")
+                category.append("Solid Output")
                 value_1.append(product_mass)
                 unit_1.append("kg/hr")
                 value_2.append(mass_frac)
@@ -460,7 +523,7 @@ def get_lca_df(m):
     
     print(f'REE mass out: {ree_mass_out} kg/hr')
     
-    # 11. Gas Emissions
+    # 13. Gas Emissions
     gas_components = [
         ("Oxygen", "O2"),
         ("Water Vapor", "H2O"),
@@ -477,7 +540,7 @@ def get_lca_df(m):
             flow.append(flow_name)
             source.append("Roaster Emissions")
             in_out.append("Out")
-            category.append("Waste")
+            category.append("Emissions to air")
             value_1.append(total_flow)
             unit_1.append("mol/hr")
             value_2.append(mol_frac)
@@ -486,7 +549,7 @@ def get_lca_df(m):
         except Exception:
             print(f"Error: could not process roaster emissions {flow_name}")
     
-    # 12. Solid Waste
+    # 14. Solid Waste
     solid_waste_streams = [
         ("Filter Cake", getattr(m.fs, 'leach_filter_cake', None)),
         ("Precipitate", getattr(m.fs, 'precipitate', None)),
@@ -510,7 +573,7 @@ def get_lca_df(m):
                 flow.append(waste_name)
                 source.append("Process")
                 in_out.append("Out")
-                category.append("Waste")
+                category.append("Solid Waste")
                 value_1.append(waste_val)
                 unit_1.append(waste_unit)
                 value_2.append("")
@@ -519,7 +582,7 @@ def get_lca_df(m):
             except Exception:
                 print(f"Error: could not process {waste_name}")
     
-    # 13. Liquid Waste
+    # 15. Liquid Waste
     liquid_waste_streams = [
         ("Precipitate Purge", getattr(m.fs, 'precip_purge', None)),
         ("Load Separator Purge", getattr(m.fs.load_sep, 'purge', None)),
@@ -540,7 +603,7 @@ def get_lca_df(m):
                 flow.append(waste_name)
                 source.append("Process")
                 in_out.append("Out")
-                category.append("Waste")
+                category.append("Wastewater")
                 value_1.append(waste_val)
                 unit_1.append("L/hr")
                 value_2.append("")
@@ -549,7 +612,7 @@ def get_lca_df(m):
             except Exception:
                 print(f"Error: could not process {waste_name}")
     
-    # 14. Organic Solvent Waste
+    # 16. Organic Solvent Waste
     organic_waste_streams = [
         ("Rougher Circuit Purge", getattr(m.fs, 'sc_circuit_purge', None)),
         ("Cleaner Circuit Purge", getattr(m.fs, 'cleaner_purge', None))
@@ -564,7 +627,7 @@ def get_lca_df(m):
                 flow.append(waste_name)
                 source.append("Process")
                 in_out.append("Out")
-                category.append("Waste")
+                category.append("Wastewater") # I don't like calling it wastewater, but it's the closest category we have
                 value_1.append(waste_val)
                 unit_1.append("L/hr")
                 value_2.append("")
