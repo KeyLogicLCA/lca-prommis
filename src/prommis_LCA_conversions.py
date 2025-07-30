@@ -1,5 +1,8 @@
+import pandas as pd
+
 # This script includes the conversion functions for the PrOMMiS data units to LCA-relevant units
 
+# SECTION 1: Conversion Functions
 # Function to convert W to kWh
 def convert_w_to_kwh(power_watts, hours):
     """
@@ -70,6 +73,7 @@ def estimate_mass_from_mass_flow_rate(flow_rate_kg_per_hour, hours):
     return flow_rate_kg_per_hour * hours  # kg
 
 #-------------------------------------------------------------------------------------------
+# SECTION 2: Functions library for converting PrOMMiS flows to LCA-relevant units
 # Function to read a dataframe and convert all flows to LCA-relevant units
 # First define default units for each flow category
 def get_flow_conversion_specs():
@@ -130,5 +134,88 @@ def get_flow_conversion_specs():
         }
     }
 
+#-------------------------------------------------------------------------------------------
+# SECTION 3: Main function to convert prommis flows in a dataframe to LCA-relevant units
+# Define a function that loops through a dataframe containing results from PrOMMiS
+# The function then checks the category and unit of each flow and applies the appropriate conversion function
+# The function will add two new columns to the dataframe: 'LCA Amount' and 'LCA Unit'
+# Evidently, the final output will be the flows (in and out) in LCA-relevant units
+
 def convert_flows_to_lca_units(df):
-    
+    """
+    Convert all flows in the dataframe to LCA-relevant units and add results as new columns.
+
+    :param df: Input pandas DataFrame with columns:
+               ['Flow ID', 'Flow', 'In/Out', 'Category', 'Amount 1', 'Unit 1', 'Amount 2', 'Unit 2']
+    :return: DataFrame with two new columns: 'LCA Amount' and 'LCA Unit'
+    """
+
+    # Get conversion specs
+    specs = get_flow_conversion_specs()
+
+    # Prepare output columns
+    lca_amounts = []
+    lca_units = []
+
+    # Loop through each row
+    for idx, row in df.iterrows():
+        category = row['Category']
+        unit1 = str(row['Unit 1']).strip()
+        unit2 = str(row['Unit 2']).strip() if pd.notnull(row['Unit 2']) and row['Unit 2'] != '' else None
+        if unit2:
+            unit = f"{unit1}, {unit2}"
+        else:
+            unit = unit1
+
+        # Find matching spec
+        matched_spec = None
+        for spec in specs.values():
+            if spec['category'] == category and spec['original_unit'].lower() == unit.lower():
+                matched_spec = spec
+                break
+
+        if matched_spec:
+            func_name = matched_spec['function']
+            # Call the appropriate conversion function
+            if func_name == 'convert_w_to_kwh':
+                # Amount 1: Power (W), Amount 2: hours
+                try:
+                    val = convert_w_to_kwh(float(row['Amount 1']), float(row['Amount 2']))
+                except Exception:
+                    val = None
+            elif func_name == 'convert_kw_to_kwh':
+                try:
+                    val = convert_kw_to_kwh(float(row['Amount 1']), float(row['Amount 2']))
+                except Exception:
+                    val = None
+            elif func_name == 'convert_m3_per_hour_to_liters':
+                try:
+                    val = convert_m3_per_hour_to_liters(float(row['Amount 1']), float(row['Amount 2']))
+                except Exception:
+                    val = None
+            elif func_name == 'estimate_mass_from_flow_rate':
+                try:
+                    val = estimate_mass_from_flow_rate(float(row['Amount 1']), float(row['Amount 2']), float(row['Amount 3']) if 'Amount 3' in row else 1)
+                except Exception:
+                    # fallback if Amount 3 is not present
+                    try:
+                        val = estimate_mass_from_flow_rate(float(row['Amount 1']), float(row['Amount 2']), 1)
+                    except Exception:
+                        val = None
+            elif func_name == 'estimate_mass_from_mass_flow_rate':
+                try:
+                    val = estimate_mass_from_mass_flow_rate(float(row['Amount 1']), float(row['Amount 2']))
+                except Exception:
+                    val = None
+            else:
+                val = None
+
+            lca_amounts.append(val)
+            lca_units.append(matched_spec['target_unit'])
+        else:
+            lca_amounts.append(None)
+            lca_units.append(None)
+
+    df['LCA Amount'] = lca_amounts
+    df['LCA Unit'] = lca_units
+    return df
