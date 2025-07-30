@@ -1,4 +1,6 @@
 # This script includes the functions to get the LCA data from the PrOMMiS flowsheet
+# Source for Sodium Hydroxide: https://netl.doe.gov/projects/files/DF_Stage1_O_Rare_Earth_Leaching_2014-01.pdf
+# Source for Oxalic Acid: https://netl.doe.gov/projects/files/DF_Stage1_O_Rare_earth_oxide_formation_2014-01.pdf
 
 import pandas as pd
 from pyomo.environ import (
@@ -174,7 +176,7 @@ def get_lca_df(m):
     try:
         h_conc = safe_value(m.fs.leach_liquid_feed.conc_mass_comp[0, "H"])
         so4_conc = safe_value(m.fs.leach_liquid_feed.conc_mass_comp[0, "SO4"])
-        total_acid_conc = h_conc + so4_conc
+        total_sulfuric_conc = h_conc + so4_conc
         
         flow_id.append(current_id)
         flow.append("Sulfuric Acid")
@@ -183,7 +185,7 @@ def get_lca_df(m):
         category.append("Chemicals")
         value_1.append(liquid_feed_vol)
         unit_1.append("L/hr")
-        value_2.append(total_acid_conc)
+        value_2.append(total_sulfuric_conc)
         unit_2.append("mg/L")
         current_id += 1
     except Exception:
@@ -392,8 +394,50 @@ def get_lca_df(m):
         current_id += 1
     except Exception:
         print(f"Error: could not process acid feed 3 hydrochloric acid")
+        
+    # 8. Sodium Hydroxide
+    # Proxy based on NETL UP library acid leaching UP.
+    # Calculated using ratio to sulfuric acid.
+    try:
+        total_sulfuric = total_sulfuric_conc * safe_value(m.fs.leach_liquid_feed.flow_vol[0]) * units.mg/units.hr
+        naoh_in = units.convert(total_sulfuric * 0.478/1.17, 
+                                to_units=units.kg/units.hr)
+        flow_id.append(current_id)
+        flow.append("Sodium Hydroxide")
+        source.append("Acid Leaching")
+        in_out.append("In")
+        category.append("Chemicals")
+        value_1.append(naoh_in)
+        unit_1.append("kg/hr")
+        value_2.append("")
+        unit_2.append("")
+        current_id += 1
+    except Exception:
+        print(f"Error: could not process acid leaching sodium hydroxide")
     
-    # 8. Electricity streams
+    # 9. Oxalic Acid
+    # Proxy based on NETL UP library REO formation UP.
+    # Calculated using ratio to sulfuric acid. 
+    # Combined the REO formation and acid leaching product system to obtain this ratio.
+    # https://mykeylogic.sharepoint.com/:x:/r/sites/KL_PRJ_LCA-2300.203.014REEPreliminaryAssessment/_layouts/15/Doc.aspx?sourcedoc=%7BAD82A6A7-95D8-4408-B4E9-3ADB9E7024C8%7D&file=NETL%20UP%20Library%20Case%20Study%20Inventory.xlsx&action=default&mobileredirect=true
+    # See cells O3:P5
+    try:
+        oxalic_in = units.convert(total_sulfuric * 0.762/1.728723404, 
+                                to_units=units.kg/units.hr)
+        flow_id.append(current_id)
+        flow.append("Oxalic Acid")
+        source.append("Precipitation")
+        in_out.append("In")
+        category.append("Chemicals")
+        value_1.append(oxalic_in)
+        unit_1.append("kg/hr")
+        value_2.append("")
+        unit_2.append("")
+        current_id += 1
+    except Exception:
+        print(f"Error: could not process precipitation oxalic acid")
+    
+    # 10. Electricity streams
     electricity_sources = [
         ("Leach Mixer", getattr(m.fs.leach_mixer, 'power', None)),
         ("Rougher Mixer", getattr(m.fs.rougher_mixer, 'power', None)),
@@ -418,7 +462,7 @@ def get_lca_df(m):
             except Exception:
                 print(f"Error: could not process {source_name} electricity")
     
-    # 9. Heat streams
+    # 11. Heat streams
     heat_sources = [
         ("Roaster", getattr(m.fs.roaster, 'heat_duty', None)),
         ("Solution Heater", getattr(m.fs, 'leach_solution_heater', None))
@@ -445,7 +489,7 @@ def get_lca_df(m):
             except Exception:
                 print(f"Error: could not process {source_name} heat")
     
-    # 10. REE Product components
+    # 12. REE Product components
     try:
         product_mass = value(units.convert(m.fs.roaster.flow_mass_product[0], to_units=units.kg / units.hr))
         
@@ -479,7 +523,7 @@ def get_lca_df(m):
     
     print(f'REE mass out: {ree_mass_out} kg/hr')
     
-    # 11. Gas Emissions
+    # 13. Gas Emissions
     gas_components = [
         ("Oxygen", "O2"),
         ("Water Vapor", "H2O"),
@@ -505,7 +549,7 @@ def get_lca_df(m):
         except Exception:
             print(f"Error: could not process roaster emissions {flow_name}")
     
-    # 12. Solid Waste
+    # 14. Solid Waste
     solid_waste_streams = [
         ("Filter Cake", getattr(m.fs, 'leach_filter_cake', None)),
         ("Precipitate", getattr(m.fs, 'precipitate', None)),
@@ -538,7 +582,7 @@ def get_lca_df(m):
             except Exception:
                 print(f"Error: could not process {waste_name}")
     
-    # 13. Liquid Waste
+    # 15. Liquid Waste
     liquid_waste_streams = [
         ("Precipitate Purge", getattr(m.fs, 'precip_purge', None)),
         ("Load Separator Purge", getattr(m.fs.load_sep, 'purge', None)),
@@ -568,7 +612,7 @@ def get_lca_df(m):
             except Exception:
                 print(f"Error: could not process {waste_name}")
     
-    # 14. Organic Solvent Waste
+    # 16. Organic Solvent Waste
     organic_waste_streams = [
         ("Rougher Circuit Purge", getattr(m.fs, 'sc_circuit_purge', None)),
         ("Cleaner Circuit Purge", getattr(m.fs, 'cleaner_purge', None))

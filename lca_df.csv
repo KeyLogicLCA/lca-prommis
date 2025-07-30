@@ -1,0 +1,56 @@
+,Flow_ID,Flow,Source,In/Out,Category,Value 1,Unit 1,Value 2,Unit 2
+0,1,Inerts,Solid Feed,In,Solid Input,22.68,kg/hr,0.6952,mass fraction
+1,2,Scandium Oxide,Solid Feed,In,Solid Input,22.68,kg/hr,2.77966e-05,mass fraction
+2,3,Yttrium Oxide,Solid Feed,In,Solid Input,22.68,kg/hr,3.28653e-05,mass fraction
+3,4,Lanthanum Oxide,Solid Feed,In,Solid Input,22.68,kg/hr,6.77769e-05,mass fraction
+4,5,Cerium Oxide,Solid Feed,In,Solid Input,22.68,kg/hr,0.000156161,mass fraction
+5,6,Praseodymium Oxide,Solid Feed,In,Solid Input,22.68,kg/hr,1.71438e-05,mass fraction
+6,7,Neodymium Oxide,Solid Feed,In,Solid Input,22.68,kg/hr,6.76618e-05,mass fraction
+7,8,Samarium Oxide,Solid Feed,In,Solid Input,22.68,kg/hr,1.47926e-05,mass fraction
+8,9,Gadolinium Oxide,Solid Feed,In,Solid Input,22.68,kg/hr,1.0405e-05,mass fraction
+9,10,Dysprosium Oxide,Solid Feed,In,Solid Input,22.68,kg/hr,7.54827e-06,mass fraction
+10,11,Aluminum Oxide,Solid Feed,In,Solid Input,22.68,kg/hr,0.237,mass fraction
+11,12,Calcium Oxide,Solid Feed,In,Solid Input,22.68,kg/hr,0.00331,mass fraction
+12,13,Iron Oxide,Solid Feed,In,Solid Input,22.68,kg/hr,0.0642,mass fraction
+13,14,Water,Liquid Feed,In,Water,224.3,L/hr,1e-10,mg/L
+14,15,Sulfuric Acid,Liquid Feed,In,Chemicals,224.3,L/hr,4900.0,mg/L
+15,16,Kerosene,Rougher Organic Make-up,In,Chemicals,6.200999999999987,L/hr,820000.0*mg/l,mg/L
+16,17,DEHPA,Rougher Organic Make-up,In,Chemicals,6.200999999999987,L/hr,48790.0*mg/l,mg/L
+17,18,Kerosene,Cleaner Organic Make-up,In,Chemicals,6.200999999999997,L/hr,820000.0*mg/l,mg/L
+18,19,DEHPA,Cleaner Organic Make-up,In,Chemicals,6.200999999999997,L/hr,48790.0*mg/l,mg/L
+19,20,Water,Acid Feed 1,In,Water,0.09,L/hr,1000000.0,mg/L
+20,21,Hydrochloric Acid,Acid Feed 1,In,Chemicals,0.09,L/hr,370.0,mg/L
+21,22,Water,Acid Feed 2,In,Water,0.09,L/hr,1000000.0,mg/L
+22,23,Hydrochloric Acid,Acid Feed 2,In,Chemicals,0.09,L/hr,1480.0,mg/L
+23,24,Water,Acid Feed 3,In,Water,9.0,L/hr,1000000.0,mg/L
+24,25,Hydrochloric Acid,Acid Feed 3,In,Chemicals,9.0,L/hr,1480.0,mg/L
+25,26,Sodium Hydroxide,Acid Leaching,In,Chemicals,1.0000000000000002e-06*(kg/mg)*(1099070.0*mg/h*0.478/1.17),kg/hr,,
+26,27,Oxalic Acid,Precipitation,In,Chemicals,1.0000000000000002e-06*(kg/mg)*(1099070.0*mg/h*0.762/1.728723404),kg/hr,,
+27,28,Electricity,Leach Mixer,In,Electricity,0.023939796630417513,hp,,
+28,29,Electricity,Rougher Mixer,In,Electricity,0.006425673661499228,hp,,
+29,30,Electricity,Cleaner Mixer,In,Electricity,0.00011221621621621622,hp,,
+30,31,Electricity,Precipitator Mixer,In,Electricity,0.0017272727272727275,hp,,
+31,32,Heat,Roaster,In,Heat,299.04817807049784,W,,
+32,33,Heat,Solution Heater,In,Heat,0.00012121416015401273,W,,
+33,34,Yttrium,Roaster Product,Out,Solid Output,0.001794346193387196,kg/hr,0.03455314695865841,mass fraction
+34,35,Lanthanum,Roaster Product,Out,Solid Output,0.001794346193387196,kg/hr,0.138824398402057,mass fraction
+35,36,Cerium,Roaster Product,Out,Solid Output,0.001794346193387196,kg/hr,0.4380116118596593,mass fraction
+36,37,Praseodymium,Roaster Product,Out,Solid Output,0.001794346193387196,kg/hr,0.05468117049173549,mass fraction
+37,38,Neodymium,Roaster Product,Out,Solid Output,0.001794346193387196,kg/hr,0.24543148429464645,mass fraction
+38,39,Samarium,Roaster Product,Out,Solid Output,0.001794346193387196,kg/hr,0.02531730617790698,mass fraction
+39,40,Gadolinium,Roaster Product,Out,Solid Output,0.001794346193387196,kg/hr,0.04988202318473388,mass fraction
+40,41,Dysprosium,Roaster Product,Out,Solid Output,0.001794346193387196,kg/hr,0.011776497590392718,mass fraction
+41,42,Oxygen,Roaster Emissions,Out,Emissions to air,0.014777697865286281,mol/hr,0.05892322881444255,mole fraction
+42,43,Water Vapor,Roaster Emissions,Out,Emissions to air,0.014777697865286281,mol/hr,0.524126149681634,mole fraction
+43,44,Carbon Dioxide,Roaster Emissions,Out,Emissions to air,0.014777697865286281,mol/hr,0.023430192746325997,mole fraction
+44,45,Nitrogen,Roaster Emissions,Out,Emissions to air,0.014777697865286281,mol/hr,0.3935204287575976,mole fraction
+45,46,Filter Cake,Process,Out,Solid Waste,22.233851852187012,kg/hr,,
+46,47,Precipitate,Process,Out,Solid Waste,1e-08,ton/hr,,
+47,48,Dust and Volatiles,Process,Out,Solid Waste,1.0410147919393828e-07,ton/hr,,
+48,49,Precipitate Purge,Process,Out,Wastewater,0.8549999999999999,L/hr,,
+49,50,Load Separator Purge,Process,Out,Wastewater,44.58967723924158,L/hr,,
+50,51,Scrub Separator Purge,Process,Out,Wastewater,0.008999999999999998,L/hr,,
+51,52,Leach Filter Cake Liquid,Process,Out,Wastewater,187.76218816817828,L/hr,,
+52,53,Roaster Liquid Inlet,Process,Out,Wastewater,0.45000000000000046,L/hr,,
+53,54,Rougher Circuit Purge,Process,Out,Wastewater,6.201,L/hr,,
+54,55,Cleaner Circuit Purge,Process,Out,Wastewater,6.200999999999995,L/hr,,
