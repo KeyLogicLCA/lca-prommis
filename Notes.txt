@@ -14,6 +14,7 @@ Step 1: Extract inputs/outputs from PrOMMiS
     ======================================================================
 
 
+
     Step 1.2: Extract all flows/parameters and structure them in a dataframe 
     =========================================================================
 
@@ -33,23 +34,41 @@ Step 2: Communicate PrOMMiS results with openLCA
 
     Step 2.1: Develop function to convert PrOMMiS results to LCA-relvant results
     ============================================================================
+    Step 2.2: Develop function that evaluates PrOMMiS flows and converts them to LCA-relevant flows normalized to selected FU
+    =========================================================================================================================
 
-| Category         | PrOMMiS Unit | LCA-relevant Unit | Function Developed? |
-|------------------|--------------|-------------------|---------------------|
-| Energy           | hp           | kWh               |                     |
-| Energy           | kW           | kWh               |Yes                  |
-| Water/Wastewater | m3/hour      | m3, Liters        |Yes                  | 
-| Materials        | m3/hr + kg/m3| kg                |Yes                  |
-| Chemicals        | m3/hr + kg/m3| kg                |                     |
-| Heat             |              | MJ                |                     |
-| solid waste      |              | kg                |                     |   
-| Solid Products   | kg/hour      | kg                |Yes                  |
+    | Category         | PrOMMiS Unit | LCA-relevant Unit | Function Developed? |
+    |------------------|--------------|-------------------|---------------------|
+    | Energy           | hp           | kWh               |                     |
+    | Energy           | kW           | kWh               |Yes                  |
+    | Water/Wastewater | m3/hour      | m3, Liters        |Yes                  | 
+    | Materials        | m3/hr + kg/m3| kg                |Yes                  |
+    | Chemicals        | m3/hr + kg/m3| kg                |                     |
+    | Heat             |              | MJ                |                     |
+    | Solid Waste      |              | kg                |                     |   
+    | Solid Products   | kg/hour      | kg                |Yes                  |
 
-   
-    Step 2.2: Develop function that evaluates PrOMMiS flows and converts them to LCA-relevant flows
-    ===============================================================================================
+    The code for steps 2.1 and 2.2 is saved under module "prommis_LCA_conversions.py" (src/prommis_LCA_conversions.py)
+    The code includes three main sections
+        Section 1: conversion functions using basic mathematical equations to covert prommis to LCA units
+        Section 2: a library that includes the different flow categories available in prommis along with the associated unit, target LCA unit, and required function to convert it
+        Section 3: a function that loops through the DF from Step 1, identifies each flow, and uses the right function to convert it to LCA-relevant units
 
+    Step 2.3: Pass converted PrOMMiS outputs to openLCA 
+    ===================================================
 
+    The code in this step involves several steps that mimic the process creation in openLCA
+    1- Use olca ipc to connect to openLCA
+    2- Create a new unit process and prompt the user to enter its metadata (e.g., name, description, etc.)
+    3- Read the dataframe produced in steps 2.1 and 2.2
+    4- A function loops through the dataframe row by row and for each row creates a flow to be entered in the unit process
+       Creating flows involves:
+            a- determining if its a technosphere flow or an elementary flow     >> The user should determine that
+            b- Selecting a unit process to model this flow                      >> The user enters keywords --> query to search the database --> return possible matches --> user selects a match
+            c- Setting the unit                                                 >> The unit is read from the provided dataframe --> if the unit is not available --> user selects one of the available units
+            d- Setting the flow value/amount                                    >> the flow value/amount is retrieved from the provided dataframe
+
+    The end goal of this step is to create a process 
 
 Step 3: Run openLCA model
 -------------------------
