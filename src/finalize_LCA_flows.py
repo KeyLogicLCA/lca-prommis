@@ -3,6 +3,57 @@ import numpy as np
 from typing import Union, List, Optional
 
 
+# Example usage
+# TODO: allow the user to specify the functional unit.
+def main():
+    """
+    Main function to demonstrate the complete workflow.
+    """
+    df = pd.read_csv('lca_df_converted.csv')
+    
+    # Run the merge_flows function for the feed
+    REO_list = [
+        "Yttrium Oxide",
+        "Lanthanum Oxide",
+        "Cerium Oxide",
+        "Praseodymium Oxide",
+        "Neodymium Oxide",
+        "Samarium Oxide",
+        "Gadolinium Oxide",
+        "Dysprosium Oxide",
+    ]
+    df = merge_flows(df, merge_source='Solid Feed', new_flow_name='374 ppm REO Feed', value_2_merge=REO_list)
+    
+    # Run the merge_flows function for the product
+    df = merge_flows(df, merge_source='Roaster Product', new_flow_name='99.85% REO Product')
+    
+    # Run the finalize_df function
+    try:
+        finalized_df = finalize_df(
+            df=df,
+            reference_flow='99.85% REO Product',
+            reference_source='Roaster Product'
+        )
+        
+        
+        # Get summary
+        summary = get_finalize_summary(finalized_df)
+        print("Summary:")
+        for key, value in summary.items():
+            if key != 'flow_type_breakdown':
+                print(f"  {key}: {value}")
+        
+        print("\nFlow Type Breakdown:")
+        for flow_type, count in summary['flow_type_breakdown'].items():
+            print(f"  {flow_type}: {count}")
+            
+    except Exception as e:
+        print(f"Error during finalization: {e}")
+    
+    finalized_df.to_csv('lca_df_finalized.csv', index=False)
+    return finalized_df
+
+
 def finalize_df(df: pd.DataFrame, 
                 reference_flow: str, 
                 reference_source: str) -> pd.DataFrame:
@@ -491,67 +542,9 @@ def get_finalize_summary(df: pd.DataFrame) -> dict:
     return summary
 
 
-# Example usage and testing functions
-
-def main():
-    """
-    Main function to demonstrate the complete workflow.
-    """
-    df = pd.read_csv('lca_df_converted.csv')
-    
-    print("=== Finalize DataFrame Workflow ===\n")
-    print("Original DataFrame:")
-    print(df)
-    print("\n" + "="*60 + "\n")
-    
-    # Run the merge_flows function for the feed
-    REO_list = [
-        "Yttrium Oxide",
-        "Lanthanum Oxide",
-        "Cerium Oxide",
-        "Praseodymium Oxide",
-        "Neodymium Oxide",
-        "Samarium Oxide",
-        "Gadolinium Oxide",
-        "Dysprosium Oxide",
-    ]
-    df = merge_flows(df, merge_source='Solid Feed', new_flow_name='374 ppm REO Feed', value_2_merge=REO_list)
-    
-    # Run the merge_flows function for the product
-    df = merge_flows(df, merge_source='Roaster Product', new_flow_name='99.85% REO Product')
-    
-    # Run the finalize_df function
-    try:
-        finalized_df = finalize_df(
-            df=df,
-            reference_flow='99.85% REO Product',
-            reference_source='Roaster Product'
-        )
-        
-        print("Finalized DataFrame:")
-        print(finalized_df)
-        print("\n" + "="*60 + "\n")
-        
-        # Get summary
-        summary = get_finalize_summary(finalized_df)
-        print("Summary:")
-        for key, value in summary.items():
-            if key != 'flow_type_breakdown':
-                print(f"  {key}: {value}")
-        
-        print("\nFlow Type Breakdown:")
-        for flow_type, count in summary['flow_type_breakdown'].items():
-            print(f"  {flow_type}: {count}")
-            
-    except Exception as e:
-        print(f"Error during finalization: {e}")
-    
-    print(finalized_df)
-    finalized_df.to_csv('lca_df_finalized.csv', index=False)
-
-
 if __name__ == "__main__":
     # Run example usage
-    main()
-
-
+    finalized_df = main()
+    print("Finalized DataFrame:")
+    print(finalized_df)
+    print("\n" + "="*60 + "\n")
