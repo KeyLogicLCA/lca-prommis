@@ -1,3 +1,4 @@
+from this import d
 import pandas as pd
 from pyomo.environ import (
     units,
@@ -12,6 +13,14 @@ try:
 except ImportError:
     print("Warning: pubchempy and/or pymatgen not available. Molecular weight conversions will be disabled.")
     PYCHEMPY_AVAILABLE = False
+
+
+def main():
+    df = pd.read_csv('lca_df.csv')
+    df = convert_flows_to_lca_units(df)
+    df.to_csv('lca_df_converted.csv', index=False)
+    return df
+
 
 # SECTION 1: Main function to convert prommis flows in a dataframe to LCA-relevant units
 # Define a function that loops through a dataframe containing results from PrOMMiS
@@ -51,11 +60,12 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
     
     Notes
     -----
-    - Handles special unit formats like "820000.0*mg/l" by extracting numeric values
     - Converts mass fractions and mole fractions to actual amounts
     - Automatically determines target units based on flow category
     - Uses PubChem API for molecular weight lookups when mol_to_kg=True
     - Provides error handling for conversion failures
+    - If using mass/mole fractions, the first value should be the total stream amount, 
+      and the second value should be the composition of the individual flow.
     
     Examples
     --------
@@ -276,63 +286,79 @@ def parse_unit_to_pyomo(unit_str):
         
     Notes
     -----
-    Handles special cases like "820000.0*mg/l" by extracting the unit part.
     Returns None for mass/mole fractions and empty strings.
+    This function does not recognize parentheses in the unit string. 
+    All multiplication should use the '*' symbol.
+    All division should use the '/' symbol.
+    All exponents should use the '**' or '^' symbol.
+    These are the only symbols allowed in the unit string.
+    This function may not handle units not recognized by Pyomo.
+    For a mass/mole fraction, the unit should be one of the following: mass fraction, mole fraction, mol fraction, mass frac, mole frac, mol frac
     """
-    if not unit_str or unit_str == '' or unit_str.lower() in ['mass fraction', 'mole fraction']:
+    if not unit_str or unit_str == '' or unit_str.lower() in ['mass fraction', 'mole fraction', 'mol fraction', 'mass frac', 'mole frac', 'mol frac']:
         return None
     
-    # Handle special cases with asterisks (like "820000.0*mg/l")
-    if '*' in unit_str:
-        # Extract the unit part after the asterisk
-        unit_str = unit_str.split('*')[-1].strip()
-        # Also handle cases where the value might be in the string
-        if unit_str.replace('.', '').replace('e', '').replace('-', '').replace('+', '').isdigit():
-            # This is actually a numeric value, not a unit
-            return None
+    unit_str = unit_str.strip()
+    # Replace all '**' with '^' so that we can split the unit string by '*' for multiplication
+    unit_str = unit_str.replace('**', '^')
     
-    # Map common unit strings to Pyomo units
-    unit_mapping = {
-        'kg/hr': units.kg / units.hr,
-        'kg/h': units.kg / units.hr,
-        'L/hr': units.L / units.hr,
-        'L/h': units.L / units.hr,
-        'ml/hr': units.mL / units.hr,
-        'ml/h': units.mL / units.hr,
-        'mol/hr': units.mol / units.hr,
-        'mol/h': units.mol / units.hr,
-        'hp': units.hp,
-        'W': units.W,
-        'ton/hr': units.ton / units.hr,
-        'ton/h': units.ton / units.hr,
-        'mg/L': units.mg / units.L,
-        'mg/l': units.mg / units.L,
-        'kBq/hr': units.kBq / units.hr,
-        'Bq/hr': units.Bq / units.hr,
-        'mBq/hr': units.mBq / units.hr,
-        'uCi/hr': units.uCi / units.hr,
-        'Ci/hr': units.Ci / units.hr,
-        'mCi/hr': units.mCi / units.hr,
-        'uCi/hr': units.uCi / units.hr,
-        'kg': units.kg,
-        'L': units.L,
-        'ml': units.mL,
-        'mol': units.mol,
-        'kWh': units.kW * units.hr,
-        'kwh': units.kW * units.hr,
-        'kBq': units.kBq,
-        'Bq': units.Bq,
-        'mBq': units.mBq,
-        'uCi': units.uCi,
-        'Ci': units.Ci,
-        'mCi': units.mCi,
-        'uCi': units.uCi,
-    }
+    # Split the unit string into a list of strings being multiplied, then into a list of strings being divided
+    unit_strings = unit_str.split('*')
+    first_unit = True # The first substring will be used to initialize the total_unit
+    for string in unit_strings:
+        string = string.strip()
+        string = string.split('/')
+        
+        i = 0
+        for sub_string in string:
+            sub_string = sub_string.strip()
+            # If the substring is empty, we skip it
+            if len(sub_string) == 0:
+                continue
+            if first_unit:
+                # If the first unit is a division, we need to invert the unit
+                if unit_str[0] == '/':
+                    total_unit = get_unit(sub_string) ** (-1)
+                else:
+                    total_unit = get_unit(sub_string)
+                first_unit = False
+            # The first string is the numerator, the rest are the denominators
+            elif i == 0:
+                total_unit *= get_unit(sub_string)
+            else:
+                total_unit /= get_unit(sub_string)
+            
+            i += 1
     
-    return unit_mapping.get(unit_str, None)
+    return total_unit
+
+# Helper function to obtain the Pyomo unit for a string
+def get_unit(string, default=None):
+    unit_str = string.strip()
+    try:
+        unit_str = unit_str.replace('^', '**')
+        new_unit = getattr(units, unit_str, None)
+        if new_unit == None:
+            for index, char in enumerate(unit_str):
+                if char.isdigit():
+                    unit_str = unit_str[:index] + '**' + unit_str[index:]
+                    new_unit = getattr(units, unit_str, None)
+                    continue
+            if new_unit == None:
+                unit_str = unit_str.lower()
+                new_unit = getattr(units, unit_str, None)
+                if new_unit == None:
+                    raise AttributeError
+        return new_unit
+    except AttributeError:
+        print(f'Error parsing unit string {string}.')
+        print(f'Ignoring this unit and returning {default}.')
+        print('Make sure you check that the unit string is correct, including capitalization and exponents, and that there are no parentheses.')
+        return default
 
 
 if __name__ == "__main__":
-    df = pd.read_csv('lca_df.csv')
-    df = convert_flows_to_lca_units(df)
-    df.to_csv('lca_df_converted.csv', index=False)
+    df = main()
+    print("Converted LCA DataFrame:")
+    print(df)
+    print("\n" + "="*60 + "\n")
