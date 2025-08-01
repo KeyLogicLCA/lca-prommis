@@ -13,10 +13,7 @@ import prommis.uky.uky_flowsheet as uky
 def main():
     m, results = uky.main()
     df = get_lca_df(m)
-    df.to_csv("lca_df.csv")  
-    print("Converted LCA DataFrame Head:")
-    print(df.head())
-    print("\n" + "="*60 + "\n")
+    df.to_csv("lca_df.csv")
     return df
 
 
