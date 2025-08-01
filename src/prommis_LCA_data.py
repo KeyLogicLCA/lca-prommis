@@ -12,7 +12,8 @@ import prommis.uky.uky_flowsheet as uky
 
 def main():
     m, results = uky.main()
-    df = get_lca_df(m)  
+    df = get_lca_df(m)
+    df.to_csv("lca_df.csv")
     return df
 
 
@@ -575,7 +576,6 @@ def get_lca_df(m):
 if __name__ == "__main__":
     df = main()
     print(df)
-    df.to_csv("lca_df.csv")
     warn(
         "Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result."
     )
