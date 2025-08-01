@@ -70,6 +70,13 @@ Step 2: Communicate PrOMMiS results with openLCA
 
     The end goal of this step is to create a process 
 
+    TODO: 
+    # Adjust addition of reference product 
+    # Improve search function
+    # Save an instance of the user selection for future iterations
+    # Give the user the option to change keywords (after getting the results)
+    # Continue revising current code to use netlolca library or create new functions for netlolca library
+
 Step 3: Run openLCA model
 -------------------------
 
