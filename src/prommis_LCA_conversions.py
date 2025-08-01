@@ -1,4 +1,3 @@
-from this import d
 import pandas as pd
 from pyomo.environ import (
     units,

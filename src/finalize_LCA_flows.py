@@ -541,7 +541,7 @@ def get_finalize_summary(df: pd.DataFrame) -> dict:
     
     return summary
 
-
+  
 if __name__ == "__main__":
     # Run example usage
     finalized_df = main()
