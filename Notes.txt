@@ -9,15 +9,14 @@ The flow includes 5 main tasks:
 
 Step 1: Extract inputs/outputs from PrOMMiS
 --------------------------------------------
+This step is performed entirely in prommis_LCA_data.py
 
     Step 1.1: Identify all LCA-relevant flows in the UKy PrOMMiS flowsheet
     ======================================================================
-
-
+In total, 17 material streams with 45 material flows were identified in addition to 4 electricity flows and 2 heat flows. 2 new flows were also added to reflect data from the NETL UP Library: sodium hydroxide and oxalic acid.
 
     Step 1.2: Extract all flows/parameters and structure them in a dataframe 
     =========================================================================
-
 
 The end goal of this step is to have all relevant flows structured as follow:
 
@@ -26,33 +25,30 @@ The end goal of this step is to have all relevant flows structured as follow:
 |    1    | Pump power  |   In   |  Electricity |  12      | kW     |          |        |
 |    2    | Li product  |   Out  |  Product     |  136     | kg/hr  |          |        |
 |    3    | Feed - MatX |   In   |  Material    |  100     | m3/hr  |  1.7     | kg/m3  |
-...
+
+This structure is passed into a csv file using prommis_LCA_data.py, which runs the UKy flowsheet and extracts the relevant LCA data.
 
 
 Step 2: Communicate PrOMMiS results with openLCA
 ------------------------------------------------
 
-    Step 2.1: Develop function to convert PrOMMiS results to LCA-relvant results
+    Step 2.1: Develop function to convert PrOMMiS results to LCA-relevant results
     ============================================================================
-    Step 2.2: Develop function that evaluates PrOMMiS flows and converts them to LCA-relevant flows normalized to selected FU
+This step is performed in prommis_LCA_conversions.py. The main function in the script, convert_flows_to_lca_units, adds two new columns to the dataframe from step 1: LCA Amount and LCA Unit (usually kg, m3, L, kWh, or MJ). This function uses the Pyomo framework and a robust error-handling system to convert any common unit to LCA units. It also uses pubchempy and pymatgen to convert moles to kg for any common chemical name. It returns the new df and creates a new csv file.
+
+    Step 2.2: Develop function that evaluates PrOMMiS flows and converts them to LCA-relevant flows normalized to selected FU.
     =========================================================================================================================
+This step is performed in finalize_LCA_flows.py. The main() function utilizes the merge_flows and finalize_df functions to convert the LCA information into a new dataframe which is ready to be imported into openLCA. The main function completes the following steps:
 
-    | Category         | PrOMMiS Unit | LCA-relevant Unit | Function Developed? |
-    |------------------|--------------|-------------------|---------------------|
-    | Energy           | hp           | kWh               |                     |
-    | Energy           | kW           | kWh               |Yes                  |
-    | Water/Wastewater | m3/hour      | m3, Liters        |Yes                  | 
-    | Materials        | m3/hr + kg/m3| kg                |Yes                  |
-    | Chemicals        | m3/hr + kg/m3| kg                |                     |
-    | Heat             |              | MJ                |                     |
-    | Solid Waste      |              | kg                |                     |   
-    | Solid Products   | kg/hour      | kg                |Yes                  |
-
-    The code for steps 2.1 and 2.2 is saved under module "prommis_LCA_conversions.py" (src/prommis_LCA_conversions.py)
-    The code includes three main sections
-        Section 1: conversion functions using basic mathematical equations to covert prommis to LCA units
-        Section 2: a library that includes the different flow categories available in prommis along with the associated unit, target LCA unit, and required function to convert it
-        Section 3: a function that loops through the DF from Step 1, identifies each flow, and uses the right function to convert it to LCA-relevant units
+1. Imports the LCA csv from the previous step
+2. Uses the merge_flows function to:
+    a. Combine the REO feed streams into one single feed stream, "374 ppm REO Feed"
+    b. Combine the REO product streams into one single product stream, "99.85% REO Product"
+3. Enters the dataframe and the desired reference flow into the finalize_df function to:
+    a. Convert all LCA values based on the functional unit/reference flow using the convert_to_functional_unit function
+    b. Create a new dataframe with only 7 columns: Flow_Name, LCA_Amount, LCA_Unit, Is_Input, Reference_Product, Flow_Type, and Description
+    c. Combine identical flows into one value using the merge_duplicate_flows function
+4. Returns this new dataframe and creates a new csv file
 
     Step 2.3: Pass converted PrOMMiS outputs to openLCA 
     ===================================================
