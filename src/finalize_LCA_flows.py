@@ -4,8 +4,7 @@ from typing import Union, List, Optional
 
 
 # Example usage
-# TODO: allow the user to specify the functional unit.
-def main():
+def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Roaster Product'):
     """
     Main function to demonstrate the complete workflow.
     """
@@ -23,6 +22,7 @@ def main():
         "Dysprosium Oxide",
     ]
     df = merge_flows(df, merge_source='Solid Feed', new_flow_name='374 ppm REO Feed', value_2_merge=REO_list)
+    # This 374 ppm value is directly calculated from the flowsheet. The original study actually used 357 ppm as the feed concentration.
     
     # Run the merge_flows function for the product
     df = merge_flows(df, merge_source='Roaster Product', new_flow_name='99.85% REO Product')
@@ -31,8 +31,8 @@ def main():
     try:
         finalized_df = finalize_df(
             df=df,
-            reference_flow='99.85% REO Product',
-            reference_source='Roaster Product'
+            reference_flow=reference_flow,
+            reference_source=reference_source
         )
         
         
@@ -117,10 +117,11 @@ def finalize_df(df: pd.DataFrame,
     
     return finalized_df
 
-#TODO: allow you to choose the column name to merge on as well
+
 def merge_flows(df: pd.DataFrame, 
                 merge_source: str, 
                 new_flow_name: str, 
+                merge_column: str = 'Source',
                 value_1_merge: Union[str, List[str]] = "same",
                 value_2_merge: Union[str, List[str]] = "same", 
                 LCA_amount_merge: Union[str, List[str]] = "total",
@@ -139,6 +140,8 @@ def merge_flows(df: pd.DataFrame,
         Source name to match for merging flows
     new_flow_name : str
         Name for the new merged flow
+    merge_column : str, optional
+        Column name to merge on (default: 'Source')
     value_1_merge : str or list, optional
         Logic for handling Value 1:
         - "same": Keep the value from the first matching flow
@@ -166,7 +169,7 @@ def merge_flows(df: pd.DataFrame,
     df_copy = df.copy()
     
     # Find all flows with matching source
-    matching_mask = df_copy['Source'] == merge_source
+    matching_mask = df_copy[merge_column] == merge_source
     matching_flows = df_copy[matching_mask]
     
     if matching_flows.empty:
@@ -182,17 +185,17 @@ def merge_flows(df: pd.DataFrame,
     new_flow['Flow'] = new_flow_name
     
     # Handle Value 1 merging
-    new_flow['Value 1'] = _merge_values(df_copy, merge_source, 'Value 1', value_1_merge)
+    new_flow['Value 1'] = _merge_values(df_copy, merge_source, 'Value 1', value_1_merge, merge_column)
     
     # Handle Value 2 merging
-    new_flow['Value 2'] = _merge_values(df_copy, merge_source, 'Value 2', value_2_merge)
+    new_flow['Value 2'] = _merge_values(df_copy, merge_source, 'Value 2', value_2_merge, merge_column)
     
     # Handle LCA Amount merging (if LCA Amount column exists)
     if 'LCA Amount' in df_copy.columns:
-        new_flow['LCA Amount'] = _merge_values(df_copy, merge_source, 'LCA Amount', LCA_amount_merge)
+        new_flow['LCA Amount'] = _merge_values(df_copy, merge_source, 'LCA Amount', LCA_amount_merge, merge_column)
     
     # Determine which flows to delete
-    flows_to_delete = _get_flows_to_delete(df_copy, merge_source, delete)
+    flows_to_delete = _get_flows_to_delete(df_copy, merge_source, delete, merge_column)
     
     # Delete specified flows
     if flows_to_delete:
@@ -200,7 +203,7 @@ def merge_flows(df: pd.DataFrame,
         # Adjust insert index if the first flow was deleted
         if insert_index in flows_to_delete:
             # Find the new position where the first flow was
-            remaining_flows = df_copy[df_copy['Source'] == merge_source]
+            remaining_flows = df_copy[df_copy[merge_column] == merge_source]
             if not remaining_flows.empty:
                 insert_index = remaining_flows.index[0]
             else:
@@ -329,7 +332,8 @@ def merge_duplicate_flows(df: pd.DataFrame) -> pd.DataFrame:
 def _merge_values(df: pd.DataFrame, 
                   source: str, 
                   value_column: str, 
-                  merge_logic: Union[str, List[str]]) -> float:
+                  merge_logic: Union[str, List[str]],
+                  merge_column: str = 'Source') -> float:
     """
     Helper function to merge values based on the specified logic.
     
@@ -349,7 +353,7 @@ def _merge_values(df: pd.DataFrame,
     float
         Merged value
     """
-    matching_flows = df[df['Source'] == source]
+    matching_flows = df[df[merge_column] == source]
     
     if merge_logic == "same":
         # Return the value from the first matching flow
@@ -371,7 +375,8 @@ def _merge_values(df: pd.DataFrame,
 
 def _get_flows_to_delete(df: pd.DataFrame, 
                         source: str, 
-                        delete_logic: Union[str, List[str]]) -> List[int]:
+                        delete_logic: Union[str, List[str]],
+                        merge_column: str = 'Source') -> List[int]:
     """
     Helper function to determine which flows should be deleted.
     
@@ -389,7 +394,7 @@ def _get_flows_to_delete(df: pd.DataFrame,
     list
         List of indices to delete
     """
-    matching_flows = df[df['Source'] == source]
+    matching_flows = df[df[merge_column] == source]
     
     if delete_logic == "all":
         # Delete all flows with matching source
@@ -438,7 +443,8 @@ def _insert_flow_at_position(df: pd.DataFrame,
 def validate_merge_parameters(df: pd.DataFrame, 
                              merge_source: str, 
                              value_1_merge: Union[str, List[str]], 
-                             value_2_merge: Union[str, List[str]]) -> bool:
+                            value_2_merge: Union[str, List[str]],
+                             merge_column: str = 'Source') -> bool:
     """
     Validate parameters for the merge_flows function.
     
@@ -459,14 +465,14 @@ def validate_merge_parameters(df: pd.DataFrame,
         True if parameters are valid
     """
     # Check if source exists
-    if merge_source not in df['Source'].values:
+    if merge_source not in df[merge_column].values:
         print(f"Warning: Source '{merge_source}' not found in DataFrame")
         return False
     
     # Check if flow names in lists exist
     for merge_logic, column_name in [(value_1_merge, 'Value 1'), (value_2_merge, 'Value 2')]:
         if isinstance(merge_logic, list):
-            matching_flows = df[df['Source'] == merge_source]
+            matching_flows = df[df[merge_column] == merge_source]
             missing_flows = [name for name in merge_logic if name not in matching_flows['Flow'].values]
             if missing_flows:
                 print(f"Warning: Flows {missing_flows} not found for {column_name} merge")
@@ -544,7 +550,7 @@ def get_finalize_summary(df: pd.DataFrame) -> dict:
   
 if __name__ == "__main__":
     # Run example usage
-    finalized_df = main()
+    finalized_df = main(reference_flow='99.85% REO Product', reference_source='Roaster Product')
     print("Finalized DataFrame:")
     print(finalized_df)
     print("\n" + "="*60 + "\n")
