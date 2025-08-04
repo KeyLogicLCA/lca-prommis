@@ -12,6 +12,20 @@ try:
 except ImportError:
     print("Warning: pubchempy and/or pymatgen not available. Molecular weight conversions will be disabled.")
     PYCHEMPY_AVAILABLE = False
+    
+
+# Global dictionary for mapping units to display names
+unit_display_mapping = {
+    'kg': 'kg',
+    'L': 'L',
+    'l': 'L',  # Handle lowercase l
+    'mol': 'mol',
+    'kW*hr': 'kWh',
+    'kW*h': 'kWh',  # Handle alternative format
+    'MJ': 'MJ',
+    'm3': 'm3',
+    'kBq': 'kBq'
+}
 
 
 def main():
@@ -104,7 +118,6 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
         
         # Create the base expression with Value 1 and Unit 1
         pyomo_unit1 = parse_unit_to_pyomo(unit1)
-        #TODO: make this a better error handling system. May need to do something in finalize_LCA_flows or do some error message or logging file
         if pyomo_unit1 is None:
             # If no valid unit, skip this row or use a default
             lca_amounts.append(0)
@@ -196,19 +209,6 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
                 val = value(converted_expression)
                 new_unit = str(target_unit)
             
-            # Clean up unit string for display
-            #TODO: make this a global dictionary
-            unit_display_mapping = {
-                'kg': 'kg',
-                'L': 'L',
-                'l': 'L',  # Handle lowercase l
-                'mol': 'mol',
-                'kW*hr': 'kWh',
-                'kW*h': 'kWh',  # Handle alternative format
-                'MJ': 'MJ',
-                'm3': 'm3',
-                'kBq': 'kBq'
-            }
             new_unit = unit_display_mapping.get(new_unit, new_unit)
             
         except Exception as e:
