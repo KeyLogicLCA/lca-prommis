@@ -177,23 +177,18 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
             converted_expression = units.convert(expression, to_units=target_unit)
             
             if 'water' in category and not 'wastewater' in category:
-                print('We made it')
                 val = value(converted_expression)
                 
                 if water_unit.lower() == 'm3':
-                    print('m3')
                     new_unit = 'm3'
                     val /= 1000
                 # No conversion required: 1 kg water = 1 L water
                 # PrOMMiS gives water density as 1 kg/L, so using 1 kg/L here allows for consistency/compatability
                 elif water_unit.lower() == 'l':
-                    print('l')
                     new_unit = 'L'
                 elif water_unit.lower() == 'kg':
-                    print('kg')
                     new_unit = 'kg'
                 else:
-                    print('else')
                     new_unit = 'm3'
                     val /= 1000
             
