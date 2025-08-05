@@ -10,6 +10,7 @@ import pandas as pd
 import olca_schema as olca
 import olca_ipc
 import netlolca
+from netlolca import NetlOlca
 import logging
 import re
 from typing import List, Optional, Tuple, Union
@@ -98,7 +99,8 @@ def create_new_process(client, df, process_name, process_description):
             # compile the flow, and flow property of that flow
             # get available units for said flow and ask user to select a unit
             # create exchange using selected flow, flow property, and unit
-        
+
+
             exchange = olca.Exchange(
                 flow = flow,
                 flow_property = flow_property,
@@ -238,7 +240,6 @@ def search_Flows_by_keywords(client, keywords: str, flow_type: Optional[olca.Flo
         # Using re.escape to handle special regex characters in keywords
         escaped_keywords = re.escape(keywords)
         pattern = re.compile(f".*{escaped_keywords}.*", re.IGNORECASE)
-        pattern = pattern.lower()
 
         # Get all flow descriptors
         flow_descriptors = client.get_descriptors(olca.Flow)
@@ -329,6 +330,7 @@ def show_flow_process_selection_menu(flow_name: str, matching_items: List, searc
                     return "PRODUCT_FLOW"
                 elif choice_num == 3:
                     print(f"Will create new waste flow: {flow_name}")
+                    return "WASTE_FLOW"
                 else:
                     print("Please enter a number between 0 and 2")
                     
