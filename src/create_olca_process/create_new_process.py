@@ -88,6 +88,7 @@ def create_new_process(client, df, process_name, process_description):
         #   check LCA Commons API
     
     for index, row in df.iterrows():
+    #TODO: modify function to read flow type - if  flow type is elementary, then skip
         product = row['Flow_Name']
         if row['Reference_Product'] == True:
             exchange = create_ref_product_exchange(client, product, row['LCA_Amount'], row['LCA_Unit'], row['Is_Input'], row['Reference_Product'])
@@ -126,6 +127,7 @@ def create_new_process(client, df, process_name, process_description):
             # TODO: 
             # Once the user selects a flow ('selection' variable)
             # compile the flow, and flow property of that flow
+            # prompt user to select a provider/process that produces this flow
             # get available units for said flow and ask user to select a unit
             # create exchange using selected flow, flow property, and unit
 
