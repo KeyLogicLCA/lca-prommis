@@ -3,6 +3,21 @@ import numpy as np
 from typing import Union, List, Optional
 
 
+# Global dictionary for mapping categories to openLCA categories
+category_mapping = {
+    'Water': 'Resource/water',
+    'Chemicals': 'Technosphere flows',
+    'Solid Input': 'Technosphere flows',
+    'Solid Output': 'Technosphere flows',
+    'Electricity': 'Technosphere flows',
+    'Heat': 'Technosphere flows',
+    'Emissions to air': 'emission/air',
+    'Emissions to water': 'emission/water',
+    'Emissions to ground': 'emission/ground',
+    'Wastewater': 'Waste flows',
+    'Solid Waste': 'Waste flows',
+}
+
 # Example usage
 def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Roaster Product'):
     """
@@ -27,6 +42,13 @@ def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Ro
     # Run the merge_flows function for the product
     df = merge_flows(df, merge_source='Roaster Product', new_flow_name='99.85% REO Product')
     
+    # Run the merge_flows function for the liquid waste flows
+    df = merge_flows(df, merge_source='Wastewater', new_flow_name='Wastewater', merge_column='Category') 
+    # Note: some of these streams are organic waste, but they're treated as wastewater
+
+    # Run the merge_flows function for the solid waste flows
+    df = merge_flows(df, merge_source='Solid Waste', new_flow_name='Solid Waste', merge_column='Category') 
+    
     # Run the finalize_df function
     try:
         finalized_df = finalize_df(
@@ -34,7 +56,6 @@ def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Ro
             reference_flow=reference_flow,
             reference_source=reference_source
         )
-        
         
         # Get summary
         summary = get_finalize_summary(finalized_df)
@@ -115,6 +136,9 @@ def finalize_df(df: pd.DataFrame,
     # Step 3: Merge duplicate flows
     finalized_df = merge_duplicate_flows(finalized_df)
     
+    # Step 4: Map the category to the openLCA category
+    finalized_df['Flow_Type'] = finalized_df['Flow_Type'].map(category_mapping)
+    
     return finalized_df
 
 
@@ -173,7 +197,7 @@ def merge_flows(df: pd.DataFrame,
     matching_flows = df_copy[matching_mask]
     
     if matching_flows.empty:
-        print(f"Warning: No flows found with source '{merge_source}'")
+        print(f"Warning: No flows found with {merge_column} '{merge_source}'")
         return df_copy
     
     # Get the first matching flow as template
@@ -502,7 +526,7 @@ def validate_finalize_parameters(df: pd.DataFrame,
         True if parameters are valid
     """
     # Check if required columns exist
-    required_columns = ['Flow', 'Source', 'In/Out', 'Category', 'LCA Unit', 'LCA Amount']
+    required_columns = ['Flow', 'Source', 'In/Out', 'Flow_Type', 'LCA Unit', 'LCA Amount']
     missing_columns = [col for col in required_columns if col not in df.columns]
     
     if missing_columns:
