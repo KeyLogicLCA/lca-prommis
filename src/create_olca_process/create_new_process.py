@@ -12,12 +12,16 @@
     # Test (and debug if needed): search_Flows_by_keywords
     # Test (and debug if needed): show_flow_process_selection_menu
     # Test (and debug if needed): get_user_search_choice
-    # Test (and debug if needed): create_new_process --> DONE   
+    # Test (and debug if needed): create_new_process
+    # Test (and debug if needed): get_flow_properties
+    # Test (and debug if needed): get_flow_units
+    # Test (and debug if needed): select_flow_property_and_unit
 
 # Other
     # check if openlca has a limit on the number of characters for the name
     # check if openlca has a limit on the number of characters for the description 
-
+    # for elementary flows - Daniel will add uuids for each flow (FEDEFL)
+    # create openLCA database with all the available processes/providers
 ########################################################################################################
 
 # This script creates a new process in openLCA
@@ -35,6 +39,8 @@ import netlolca
 from netlolca import NetlOlca
 import logging
 import re
+import uuid
+import datetime
 from typing import List, Optional, Tuple, Union
 
 
@@ -68,6 +74,7 @@ def create_new_process(client, df, process_name, process_description):
     TODO: check if openlca has a limit on the number of characters for the description
     """
     description = process_description
+    
     # 3. Create empty process
     process = create_empty_process(client, name, description)
     # TODO: use function from netlolca to create a new process
@@ -76,6 +83,10 @@ def create_new_process(client, df, process_name, process_description):
     exchanges = []
 
     # Loop through the dataframe and create and exchange for each flow
+    # Federal elementary flow - existing python package
+    # TODO: write code that gets databases from LCACommons for chemicals
+        #   check LCA Commons API
+    
     for index, row in df.iterrows():
         product = row['Flow_Name']
         if row['Reference_Product'] == True:
@@ -111,9 +122,6 @@ def create_new_process(client, df, process_name, process_description):
             selection = show_flow_process_selection_menu(row['Flow_Name'], matching_items, search_keywords)
 
 
-            # flow, unit = _process_user_selection(client, selection, flow_name, unit_name, row)
-            # # once flow is selected --> create flow property --> create exchange using selected flow and flow property
-            # flow_property = _get_flow_property_for_exchange(flow)
 
             # TODO: 
             # Once the user selects a flow ('selection' variable)
@@ -213,6 +221,7 @@ def generate_id(prefix: str = "entity") -> str:
             # category --> default set to "Technical flow properties"
             # refUnit --> taken from df (e.g., kg)
      
+# TODO: add option to create reference product from existing technosphere flow
 def create_ref_product_exchange(client, flowName, amount, unit, isInput, isRef):
     # Create reference product exchange
     ex_flow_property_factor = olca.FlowPropertyFactor(
@@ -407,7 +416,7 @@ def get_user_search_choice(flow_name: str) -> tuple:
         tuple: (search_type, search_keywords) where search_type is 'process', 'flow', or 'skip'
     """
     print(f"\nSearch Options for Flow: {flow_name}")
-    print("💡 Choose search strategy:")
+    print("Choose search strategy:")
     print("   1. Search for product flows")
     print("   2. Search in elementary flows")
     print("   3. Search in waste flows")
@@ -438,7 +447,7 @@ def get_user_search_choice(flow_name: str) -> tuple:
             return ('skip', None)
     
     # Get search keywords
-    print(f"\n🔍 Enter search keywords for {search_type.upper()} search:")
+    print(f"\nEnter search keywords for {search_type.upper()} search:")
     print(f"Default would be: '{flow_name}'")
     
     while True:
@@ -453,3 +462,187 @@ def get_user_search_choice(flow_name: str) -> tuple:
                 
         except KeyboardInterrupt:
             return ('skip', None)
+
+
+########################################################
+# Flow Properties and Units Functions
+########################################################
+
+def get_flow_properties(client, flow_uuid):
+    """
+    Get flow properties for a given flow.
+
+    Args:
+        client: OpenLCA client instance
+        flow_uuid (str): Universally unique identifier (UUID) of the flow
+
+    Returns:
+        list: List of flow property dictionaries with 'id', 'name', and 'unit_group' keys,
+              or empty list if flow not found or no properties exist.
+    """
+    try:
+        flow = client.query(olca.Flow, flow_uuid)
+        if not flow or not flow.flow_properties:
+            return []
+        
+        properties = []
+        for fp in flow.flow_properties:
+            if fp.flow_property and fp.flow_property.ref:
+                prop_obj = client.query(olca.FlowProperty, fp.flow_property.ref.id)
+                if prop_obj:
+                    prop_data = {
+                        'id': prop_obj.id,
+                        'name': prop_obj.name,
+                        'unit_group': prop_obj.unit_group.ref.id if prop_obj.unit_group and prop_obj.unit_group.ref else None
+                    }
+                    properties.append(prop_data)
+        return properties
+    except Exception as e:
+        logger.warning(f"Could not retrieve flow properties for {flow_uuid}: {e}")
+        return []
+
+
+def get_flow_units(client, flow_uuid, flow_property_uuid=None):
+    """
+    Get available units for a flow's properties.
+
+    Args:
+        client: OpenLCA client instance
+        flow_uuid (str): Universally unique identifier (UUID) of the flow
+        flow_property_uuid (str, optional): Specific flow property UUID to get units for. 
+                                          If None, returns units for the first/reference flow property.
+
+    Returns:
+        list: List of unit dictionaries with 'id', 'name', and 'symbol' keys,
+              or empty list if no units found.
+    """
+    try:
+        flow = client.query(olca.Flow, flow_uuid)
+        if not flow or not flow.flow_properties:
+            return []
+        
+        # Find the target flow property
+        target_fp = None
+        if flow_property_uuid:
+            # Look for specific flow property
+            for fp in flow.flow_properties:
+                if fp.flow_property and fp.flow_property.ref and fp.flow_property.ref.id == flow_property_uuid:
+                    target_fp = fp
+                    break
+        else:
+            # Use reference flow property (first one with reference_flow_property=True, or first one)
+            for fp in flow.flow_properties:
+                if fp.reference_flow_property:
+                    target_fp = fp
+                    break
+            if not target_fp and flow.flow_properties:
+                target_fp = flow.flow_properties[0]
+        
+        if not target_fp or not target_fp.flow_property or not target_fp.flow_property.ref:
+            return []
+        
+        # Get the flow property and its unit group
+        flow_prop = client.query(olca.FlowProperty, target_fp.flow_property.ref.id)
+        if not flow_prop or not flow_prop.unit_group or not flow_prop.unit_group.ref:
+            return []
+        
+        unit_group = client.query(olca.UnitGroup, flow_prop.unit_group.ref.id)
+        if not unit_group or not unit_group.units:
+            return []
+        
+        # Extract unit information
+        units = []
+        for unit in unit_group.units:
+            unit_data = {
+                'id': unit.id,
+                'name': unit.name,
+                'symbol': getattr(unit, 'symbol', unit.name)
+            }
+            units.append(unit_data)
+        
+        return units
+    except Exception as e:
+        logger.warning(f"Could not retrieve units for flow {flow_uuid}: {e}")
+        return []
+
+
+def select_flow_property_and_unit(client, flow, flow_name):
+    """
+    Interactive function to let user select flow property and unit for a given flow.
+    
+    Args:
+        client: OpenLCA client instance
+        flow: The flow object
+        flow_name (str): Name of the flow for display purposes
+        
+    Returns:
+        tuple: (flow_property_obj, unit_obj) or (None, None) if cancelled
+    """
+    # Get flow properties
+    properties = get_flow_properties(client, flow.id)
+    if not properties:
+        print(f"❌ No flow properties found for flow: {flow_name}")
+        return None, None
+    
+    # If only one property, use it
+    if len(properties) == 1:
+        selected_property = properties[0]
+        print(f"✅ Using flow property: {selected_property['name']}")
+    else:
+        # Let user select flow property
+        print(f"\n📊 Select flow property for '{flow_name}':")
+        for i, prop in enumerate(properties, 1):
+            print(f"   {i}. {prop['name']} (ID: {prop['id']})")
+        
+        while True:
+            try:
+                choice = input(f"Select property (1-{len(properties)}): ").strip()
+                choice_num = int(choice)
+                if 1 <= choice_num <= len(properties):
+                    selected_property = properties[choice_num - 1]
+                    break
+                else:
+                    print(f"Please enter a number between 1 and {len(properties)}")
+            except ValueError:
+                print("Please enter a valid number")
+            except KeyboardInterrupt:
+                return None, None
+    
+    # Get units for selected property
+    units = get_flow_units(client, flow.id, selected_property['id'])
+    if not units:
+        print(f"❌ No units found for property: {selected_property['name']}")
+        return None, None
+    
+    # If only one unit, use it
+    if len(units) == 1:
+        selected_unit = units[0]
+        print(f"✅ Using unit: {selected_unit['name']} ({selected_unit['symbol']})")
+    else:
+        # Let user select unit
+        print(f"\n📏 Select unit for property '{selected_property['name']}':")
+        for i, unit in enumerate(units, 1):
+            print(f"   {i}. {unit['name']} ({unit['symbol']})")
+        
+        while True:
+            try:
+                choice = input(f"Select unit (1-{len(units)}): ").strip()
+                choice_num = int(choice)
+                if 1 <= choice_num <= len(units):
+                    selected_unit = units[choice_num - 1]
+                    break
+                else:
+                    print(f"Please enter a number between 1 and {len(units)}")
+            except ValueError:
+                print("Please enter a valid number")
+            except KeyboardInterrupt:
+                return None, None
+    
+    # Get the actual objects
+    try:
+        flow_property_obj = client.query(olca.FlowProperty, selected_property['id'])
+        unit_obj = client.query(olca.Unit, selected_unit['id'])
+        return flow_property_obj, unit_obj
+    except Exception as e:
+        logger.error(f"Failed to retrieve flow property or unit objects: {e}")
+        return None, None
