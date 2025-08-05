@@ -1,3 +1,25 @@
+########################################################################################################
+# TODO's in this script:
+# Writing/editing functions
+    # use function from netlolca to create a new process and test new function
+    # Develop function to get flow property of the flow selected by the user
+    # Develop function to get the available units for the flow selected by the user
+    # Use function from netlolca library to create exchange for the selected flow 
+    # Create exchange for the reference product flow using netlolca library
+
+# Testing/debugging
+    # Test (and debug if needed): create_ref_product_exchange                               --> DONE
+    # Test (and debug if needed): search_Flows_by_keywords
+    # Test (and debug if needed): show_flow_process_selection_menu
+    # Test (and debug if needed): get_user_search_choice
+    # Test (and debug if needed): create_new_process --> DONE   
+
+# Other
+    # check if openlca has a limit on the number of characters for the name
+    # check if openlca has a limit on the number of characters for the description 
+
+########################################################################################################
+
 # This script creates a new process in openLCA
 # This code builds on three main existing libraries:
     # 1. netlolca
@@ -245,29 +267,20 @@ def search_Flows_by_keywords(client, keywords: str, flow_type: Optional[olca.Flo
             print("No flows found in database")
             return []
 
-        matching_decriptors = []
+        matching_descriptors = []
         for descriptor in flow_descriptors:
-            if pattern in descriptor.name.lower():
-                matching_decriptors.append(descriptor)
+            if pattern.search(descriptor.name.lower()):
+                matching_descriptors.append(descriptor)
 
-        if not matching_decriptors:
+        if not matching_descriptors:
             print(f"No flows found matching '{keywords}'")
             return []
         
-        print(f"Found {len(matching_decriptors)} flows matching '{keywords}'")
+        print(f"Found {len(matching_descriptors)} flows matching '{keywords}'")
 
-
-        # Use netlolca's match_process_names method
-        matches = client.match_process_names(pattern)
-        if not matches:
-            print(f"No processes found matching '{keywords}' in process names")
-            return []
-        
-        print(f"Found {len(matches)} processes matching '{keywords}'")
-
-# Get full flow objects and filter by type if specified
+        # Get full flow objects and filter by type if specified
         matching_flows = []
-        for descriptor in matching_flows:
+        for descriptor in matching_descriptors:
             try:
                 flow = client.query(olca.Flow, descriptor.id)
                 if flow:
