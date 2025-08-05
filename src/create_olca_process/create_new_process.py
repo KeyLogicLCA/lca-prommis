@@ -63,7 +63,6 @@ def create_new_process(client, df, process_name, process_description):
             # a. ask user to define the flow type: elementary, product, waste
             # b. ask user to enter search keyword
             search_type, search_keywords = get_user_search_choice(row['Flow_Name'])
-            # TODO: add a function to get the user's choice
 
             if search_type == "skip":
                 print(f"Skipping flow: {row['Flow_Name']}")
@@ -99,7 +98,6 @@ def create_new_process(client, df, process_name, process_description):
             # compile the flow, and flow property of that flow
             # get available units for said flow and ask user to select a unit
             # create exchange using selected flow, flow property, and unit
-
 
             exchange = olca.Exchange(
                 flow = flow,
@@ -140,7 +138,7 @@ def read_dataframe(df):
         raise ValueError(f"The dataframe must have the following columns: {required_columns}")
     return df
 
-# Create empty process (CAN BE REPLACED WITH NETLOLCA'S FUNCTION)
+# Create empty process TODO: (CAN BE REPLACED WITH NETLOLCA'S FUNCTION)
 ########################################################
 def create_empty_process(client, process_name, process_description):
     process_id = generate_id("process")
