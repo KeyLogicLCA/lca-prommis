@@ -183,8 +183,8 @@ def _process_user_selection(client: Client, selection: Union[str, Tuple, olca.Pr
             id=generate_id("flow"),
             name=flow_name,
             description=row.get('Description', f'New {flow_type.lower()}: {flow_name}'),
-            flow_type=olca.FlowType.ELEMENTARY_FLOW if flow_type == "ELEMENTARY_FLOW" else olca.FlowType.PRODUCT_FLOW,
-            flow_properties=template_flow.flow_properties
+            flow_type=olca.FlowType.ELEMENTARY_FLOW if flow_type == "ELEMENTARY_FLOW" else olca.FlowType.PRODUCT_FLOW
+            #flow_properties=template_flow.flow_properties
         )
         
         # Try to save the new flow

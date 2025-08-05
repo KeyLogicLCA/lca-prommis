@@ -76,6 +76,33 @@ Step 2: Communicate PrOMMiS results with openLCA
     # Save an instance of the user selection for future iterations
     # Give the user the option to change keywords (after getting the results)
     # Continue revising current code to use netlolca library or create new functions for netlolca library
+    # Adjust code logic
+        Final Logic
+            1- Read dataframe with finalized LCA flows
+            2- search for reference product (Reference_Product == True)
+            3- Create 1st exchange --> reference product
+            4- Loop through remaining rows of df and for each row 
+                4.1 - Prompt user for flow type: product, elementary, waste
+                4.2 - Prompt user for keyword
+                4.3 - User selects flow
+                4.4 - User selects unit
+
+
+        Main functions needed
+        1- Function to connect to openLCA -- client = initialize_client()
+        2- Function that creates new flows (for reference product) to be used as an exchange in a unit process
+        3- Function to read openLCA database + query existing flows/processes based on user keyword
+        4- Function that reads and reports available units for a specific flow
+        5- Function that adds a new exchange given a process uuid, name, amount ,and unit
+        6- Function that creates new unit process given
+            Process name
+            Process description
+            Reference product information
+            exchanges information
+
+        Support functions needed:
+        1- Function to read/validate df 
+        2- Function that generates uuid
 
 Step 3: Run openLCA model
 -------------------------

@@ -1,0 +1,226 @@
+================================================================================
+DEPENDENCY ANALYSIS REPORT
+create_olca_process Package
+================================================================================
+
+MODULE OVERVIEW
+----------------------------------------
+
+dataframe_utils.py (3 functions): (Reviewed)
+  - get_amount_from_dataframe_row(row)
+    Get amount from DataFrame row.
+    This function reads the dataframe and extracts the amount from the LCA_Amount column
+    If needed, this function converts the amount to float
+  - validate_dataframe_columns(df)
+    Validate that the DataFrame has the required columns for LCA data.
+  - load_dataframe_from_csv(file_path)
+    Load DataFrame from CSV file with validation.
+
+flow_manager.py (4 functions): 
+  - get_existing_flows(client)
+    Get all existing flows from the database using efficient descriptor-based retrieval.
+  - search_flows_by_name(client, flow_name)
+    Search for flows by name using efficient descriptor-based search.
+  - find_compatible_flow_pattern(client, unit_name)
+    Find an existing flow with a compatible unit to use as a template pattern.
+  - create_flow_from_dataframe_row(client, row, existing_flows)
+    This function is used to generate flow objects for use in process exchanges (input/output)
+    First, the function reads the df generates from PrOMMiS data
+    The function searches for existing flows in a local list
+    If the local list doesn't include the selected flow the function searches in the openLCA database
+    If a match is not found in both steps above, the function creates a new flow by 
+      0- generating uuid for new flow
+      1- using a keyword
+      2- using a specific flow type (waste, elementary flow, product flow)
+      3- using an available unit for the selected flow based on keyword and type above
+
+olca_utils.py (6 functions): (Reviewed)
+  - generate_id(prefix)
+    Generate a unique ID for openLCA entities.
+  - test_connection(client)
+    Test the connection to openLCA and return connection status.
+  - get_database_info(client)
+    Get basic information about the connected database.
+  - find_entity_by_name(entities, name, entity_type)
+    Find an entity by name from a list of entities.
+  - initialize_client()
+    Initialize and test the openLCA client connection.
+  - print_database_summary(client)
+    Print a summary of the database contents.
+
+process_manager.py (5 functions):
+  - create_process_from_dataframe_with_selection(client, df, process_name, process_description)
+    Create a process from DataFrame with user selection for each flow.
+  - _process_user_selection(client, selection, flow_name, unit_name, row)
+    Process the user's selection and return the appropriate flow and unit.
+  - _find_unit_in_flow(client, flow, unit_name, flow_name)
+    Find a unit in the given flow's unit group.
+  - _select_flow_from_process(process, flow_name)
+    Select a flow from an existing process.
+  - _get_flow_property_for_exchange(flow)
+    Get the appropriate flow property for an exchange.
+
+search_utils.py (3 functions):
+  - search_processes_by_keywords(client, keywords)
+    Search for processes by keywords using efficient descriptor-based search.
+  - get_existing_processes(client)
+    Get all existing processes from the database using efficient descriptor-based retrieval.
+  - sort_key(descriptor)
+
+unit_manager.py (8 functions):
+  - get_existing_units(client)
+    Get all existing units from the database. Handle @type attribute issues.
+  - get_common_unit_suggestions(unit_name)
+    Get common unit name suggestions based on the requested unit.
+  - search_units_by_name(client, unit_name)
+    Search for units by name using efficient descriptor-based search.
+  - find_units_in_flow(client, flow, requested_unit_name)
+    Find all available units in a flow's unit group.
+  - find_unit_in_flow_by_name(client, flow, unit_name, flow_name)
+    Find a specific unit in a flow's unit group, with user selection if needed.
+  - create_unit_from_dataframe_row(client, row, existing_units)
+    Create a unit from a DataFrame row or find existing one using efficient search.
+  - sort_key(unit)
+  - sort_key(unit)
+
+user_interface.py (5 functions):
+  - show_process_selection_menu(existing_processes)
+    Show a menu for user to select an existing process.
+  - get_user_search_choice(flow_name)
+    Ask user to choose search type and keywords for a specific flow.
+  - show_flow_process_selection_menu(flow_name, matching_items, search_type, search_keywords)
+    Show a menu for user to select a process or flow for a specific flow.
+  - show_unit_selection_in_flow_menu(flow_name, requested_unit_name, available_units)
+    Show a menu for user to select a unit from a flow's available units.
+  - get_yes_no_input(prompt)
+    Get a yes/no input from the user.
+
+
+FUNCTION DEPENDENCIES
+----------------------------------------
+
+dataframe_utils.load_dataframe_from_csv:
+  -> dataframe_utils.validate_dataframe_columns
+
+flow_manager.create_flow_from_dataframe_row:
+  -> flow_manager.find_compatible_flow_pattern
+  -> flow_manager.search_flows_by_name
+  -> olca_utils.find_entity_by_name
+  -> olca_utils.generate_id
+
+olca_utils.initialize_client:
+  -> olca_utils.test_connection
+
+olca_utils.print_database_summary:
+  -> olca_utils.get_database_info
+
+process_manager.create_process_from_dataframe_with_selection:
+  -> dataframe_utils.get_amount_from_dataframe_row
+  -> flow_manager.search_flows_by_name
+  -> olca_utils.generate_id
+  -> process_manager._get_flow_property_for_exchange
+  -> process_manager._process_user_selection
+  -> search_utils.search_processes_by_keywords
+  -> user_interface.get_user_search_choice
+  -> user_interface.show_flow_process_selection_menu
+
+process_manager._process_user_selection:
+  -> flow_manager.find_compatible_flow_pattern
+  -> olca_utils.generate_id
+  -> process_manager._find_unit_in_flow
+  -> process_manager._select_flow_from_process
+
+process_manager._find_unit_in_flow:
+  -> unit_manager.find_unit_in_flow_by_name
+
+unit_manager.search_units_by_name:
+  -> unit_manager.get_common_unit_suggestions
+
+unit_manager.find_unit_in_flow_by_name:
+  -> unit_manager.find_units_in_flow
+  -> user_interface.show_unit_selection_in_flow_menu
+
+unit_manager.create_unit_from_dataframe_row:
+  -> olca_utils.find_entity_by_name
+  -> olca_utils.generate_id
+  -> unit_manager.search_units_by_name
+
+
+IMPORT ANALYSIS
+----------------------------------------
+
+dataframe_utils:
+  External imports:
+    - logging
+    - pandas
+
+flow_manager:
+  External imports:
+    - logging
+    - olca_ipc.Client
+    - olca_schema
+    - olca_utils.find_entity_by_name
+    - olca_utils.generate_id
+    - pandas
+    - typing.List
+    - typing.Optional
+    - typing.Tuple
+
+olca_utils:
+  External imports:
+    - logging
+    - olca_ipc.Client
+    - olca_schema
+    - sys
+    - typing.Any
+    - typing.List
+    - typing.Optional
+    - uuid
+
+process_manager:
+  External imports:
+    - dataframe_utils.get_amount_from_dataframe_row
+    - datetime.datetime
+    - flow_manager.find_compatible_flow_pattern
+    - flow_manager.search_flows_by_name
+    - logging
+    - olca_ipc.Client
+    - olca_schema
+    - olca_utils.generate_id
+    - pandas
+    - search_utils.search_processes_by_keywords
+    - typing.Optional
+    - typing.Tuple
+    - typing.Union
+    - unit_manager.find_unit_in_flow_by_name
+    - user_interface.get_user_search_choice
+    - user_interface.show_flow_process_selection_menu
+
+search_utils:
+  External imports:
+    - logging
+    - olca_ipc.Client
+    - olca_schema
+    - typing.List
+
+unit_manager:
+  External imports:
+    - logging
+    - olca_ipc.Client
+    - olca_schema
+    - olca_utils.find_entity_by_name
+    - olca_utils.generate_id
+    - pandas
+    - typing.List
+    - typing.Optional
+    - user_interface.show_unit_selection_in_flow_menu
+
+user_interface:
+  External imports:
+    - logging
+    - olca_ipc.Client
+    - olca_schema
+    - typing.List
+    - typing.Optional
+    - typing.Tuple
+    - typing.Union
