@@ -1,13 +1,13 @@
 ########################################################################################################
 # TODO's in this script:
 # Writing/editing functions
-    # use function from netlolca to create a new process and test new function
     # Develop function to get flow property of the flow selected by the user
     # Develop function to get the available units for the flow selected by the user
     # Use function from netlolca library to create exchange for the selected flow 
     # Create exchange for the reference product flow using netlolca library
 
 # Testing/debugging
+    # Test (and debug if needed): create_empty_process                                      --> DONE   
     # Test (and debug if needed): create_ref_product_exchange                               --> DONE
     # Test (and debug if needed): search_Flows_by_keywords
     # Test (and debug if needed): show_flow_process_selection_menu
@@ -79,74 +79,40 @@ def create_new_process(client, df, process_name, process_description):
     process = create_empty_process(client, name, description)
     # TODO: use function from netlolca to create a new process
 
-    # 4. Create exchanges
+    # 4. Create exchange for reference product first
     exchanges = []
 
-    # Loop through the dataframe and create and exchange for each flow
-    # Federal elementary flow - existing python package
-    # TODO: write code that gets databases from LCACommons for chemicals
-        #   check LCA Commons API
+    # Loop through the dataframe, find reference product, and create exchange for it
     
     for index, row in df.iterrows():
     #TODO: modify function to read flow type - if  flow type is elementary, then skip
         product = row['Flow_Name']
         if row['Reference_Product'] == True:
             exchange = create_ref_product_exchange(client, product, row['LCA_Amount'], row['LCA_Unit'], row['Is_Input'], row['Reference_Product'])
+            exchanges.append(exchange)
         else:
-            # show flow process selection menu to:
-            # a. ask user to define the flow type: elementary, product, waste
-            # b. ask user to enter search keyword
-            search_type, search_keywords = get_user_search_choice(row['Flow_Name'])
+            # TODO: Handle non-reference product flows here
+            # For now, we skip non-reference product flows
+            print(f"Skipping non-reference product flow: {product}")
+            continue
 
-            if search_type == "skip":
-                print(f"Skipping flow: {row['Flow_Name']}")
-                continue
+    # 5. Create exchange for elementary flows
+    # TODO: write function to create exchange for elementary flows
+    #       the function should be able to read the uuid for each elementary flow from the dataframe and use it to create the exchange
 
-            #search based on user's choice
-            if search_type == 'product flow':
-                print(f"Searching for product flows containing '{search_keywords}'...")
-                matching_items = search_Flows_by_keywords(client, search_keywords, olca.FlowType.PRODUCT_FLOW)
-                print(f"Found {len(matching_items)} matching processes")
-
-            elif search_type == 'elementary flow':
-                print(f"Searching for flows containing '{search_keywords}'...")
-                matching_items = search_Flows_by_keywords(client, search_keywords, olca.FlowType.ELEMENTARY_FLOW)
-                print(f"Found {len(matching_items)} matching flows")
-
-            else:
-                print(f"Searching for waste flows containing '{search_keywords}'...")
-                matching_items = search_Flows_by_keywords(client, search_keywords, olca.FlowType.WASTE_FLOW)
-                print(f"Found {len(matching_items)} matching flows")
-
-
-            # Once given the list of matching flows, ask user to select what flow to use
-            selection = show_flow_process_selection_menu(row['Flow_Name'], matching_items, search_keywords)
-
-
-
-            # TODO: 
-            # Once the user selects a flow ('selection' variable)
-            # compile the flow, and flow property of that flow
-            # prompt user to select a provider/process that produces this flow
-            # get available units for said flow and ask user to select a unit
-            # create exchange using selected flow, flow property, and unit
-
-            exchange = olca.Exchange(
-                flow = flow,
-                flow_property = flow_property,
-                unit = unit,
-                amount = df['LCA_Amount'],
-                is_input = df['Is_Input'],
-                is_quantitative_reference = df['Reference_Product']
-            )
-
-        exchanges.append(exchange)
+    # 6. Create exchange for product and waste flows
+    # TODO: write function that loops through the dataframe
+    #       for each row, the function prompts the user to enter keyword
+    #       the function uses the keyword, runs a query, and finds matching flows
+    #       the function then prompts the user to select a flow from the list of matching flows
+    #       the user should then select a process associated with the selected flow
+    #       the function then creates an exchange using the selected flow, process, and unit 
 
     # 5. Create process
     process.exchanges = exchanges
 
     # 6. Save process to openLCA
-    created_process = client.put(process)
+    created_process = client.client.put(process)
     print(f"Successfully created process: {process_name}")
     print(f"Process saved successfully to openLCA database!")    
     return created_process
@@ -159,8 +125,16 @@ def create_new_process(client, df, process_name, process_description):
 ########################################################
 
 def read_dataframe(df):
-    # Read dataframe
-    df = pd.read_csv(df)
+    # Read dataframe - handle both file path and DataFrame object
+    if isinstance(df, str):
+        # If df is a string (file path), read the CSV file
+        df = pd.read_csv(df)
+    elif isinstance(df, pd.DataFrame):
+        # If df is already a DataFrame, use it directly
+        pass
+    else:
+        raise TypeError("df must be either a file path (string) or a pandas DataFrame")
+    
     # Validate structure
     # The dataframe should have the following columns:
     # Flow_Name, LCA_Amount, LCA_Unit, Is_Input, Reference_Product, Flow_Type
@@ -180,8 +154,10 @@ def create_empty_process(client, process_name, process_description):
         description=process_description,
         process_type=olca.ProcessType.UNIT_PROCESS,
         version="1.0.0",
-        last_change=datetime.now().isoformat()
+        last_change=datetime.datetime.now().isoformat()
     )
+    
+    return process
 
 # Generate ID
 ########################################################
@@ -223,32 +199,142 @@ def generate_id(prefix: str = "entity") -> str:
             # category --> default set to "Technical flow properties"
             # refUnit --> taken from df (e.g., kg)
      
+# Helper function to find flow property for a unit
+def find_flow_property_for_unit(client, unit_obj):
+    """
+    Find a flow property that contains the given unit.
+    
+    Args:
+        client: NetlOlca client object
+        unit_obj: The unit object to find a flow property for
+    
+    Returns:
+        olca.FlowProperty: A flow property containing this unit or None if not found
+    """
+    try:
+        # Get all flow properties using NetlOlca's method
+        flow_properties = client.get_all(olca.FlowProperty)
+        
+        # Search through flow properties to find one that has the unit in its unit group
+        for flow_property in flow_properties:
+            if hasattr(flow_property, 'unit_group') and flow_property.unit_group:
+                # Get the unit group
+                if hasattr(flow_property.unit_group, 'id'):
+                    unit_group = client.client.get(olca.UnitGroup, flow_property.unit_group.id)
+                    if hasattr(unit_group, 'units') and unit_group.units:
+                        for unit in unit_group.units:
+                            if hasattr(unit, 'id') and hasattr(unit_obj, 'id'):
+                                if unit.id == unit_obj.id:
+                                    return flow_property
+                            elif hasattr(unit, 'name') and hasattr(unit_obj, 'name'):
+                                if unit.name == unit_obj.name:
+                                    return flow_property
+                                    
+    except Exception as e:
+        print(f"Error finding flow property for unit: {e}")
+        
+    return None
+
+# Helper function to find unit by name
+# We need this function because sometimes openLCA does not take the unit from the dataframe if it is not an exact match
+# This function will search for a matching unit in the openLCA database and use it for the exchange
+def find_unit_by_name(client, unit_name: str):
+    """
+    Find a unit by name in the openLCA database using NetlOlca methods.
+    
+    Args:
+        client: NetlOlca client object
+        unit_name (str): The unit name to search for
+    
+    Returns:
+        olca.Unit: The first matching unit or None if not found
+    """
+    try:
+        # Get all unit groups using NetlOlca's method
+        unit_groups = client.get_all(olca.UnitGroup)
+        unit_name_lower = unit_name.lower()
+        
+        # Search through all unit groups to find the unit
+        for unit_group in unit_groups:
+            if hasattr(unit_group, 'units') and unit_group.units:
+                for unit in unit_group.units:
+                    if hasattr(unit, 'name') and unit.name:
+                        if unit.name.lower() == unit_name_lower:
+                            return unit
+                        
+        # If exact match not found, try partial match
+        for unit_group in unit_groups:
+            if hasattr(unit_group, 'units') and unit_group.units:
+                for unit in unit_group.units:
+                    if hasattr(unit, 'name') and unit.name:
+                        if unit_name_lower in unit.name.lower():
+                            return unit
+                            
+    except Exception as e:
+        print(f"Error finding unit '{unit_name}': {e}")
+        
+    return None
+
 # TODO: add option to create reference product from existing technosphere flow
 def create_ref_product_exchange(client, flowName, amount, unit, isInput, isRef):
-    # Create reference product exchange
+    # Convert unit string to unit object if needed
+    if isinstance(unit, str):
+        unit_obj = find_unit_by_name(client, unit)
+        if unit_obj is None:
+            raise ValueError(f"Could not find unit '{unit}' in the openLCA database")
+    else:
+        unit_obj = unit
+    
+    # Find a flow property that contains this unit
+    flow_property = find_flow_property_for_unit(client, unit_obj)
+    if flow_property is None:
+        raise ValueError(f"Could not find a flow property for unit '{unit_obj.name}' in the openLCA database")
+    
+    # Create reference to the flow property
+    flow_property_ref = olca.Ref(
+        id=flow_property.id,
+        name=flow_property.name
+    )
+    
+    # Create flow property factor with proper reference
     ex_flow_property_factor = olca.FlowPropertyFactor(
         conversion_factor = 1.0,
-        is_ref_flow_property = True
+        is_ref_flow_property = True,
+        flow_property = flow_property_ref
     )
-    #Create flow 
+    
+    #Create flow with proper flow properties
     ex_flow = olca.Flow(
         id = generate_id(),
         name = flowName,
-        description = "",
-        flow_type = client.FlowType.PRODUCT_FLOW,
+        description = f"Product flow for {flowName}",
+        flow_type = olca.FlowType.PRODUCT_FLOW,
         flow_properties = [ex_flow_property_factor]
     )
-    # Use this flow to create the exchange
+    
+    # Save the flow to the database first
+    saved_flow = client.client.put(ex_flow)
+    print(f"Created flow: {saved_flow.name} with ID: {saved_flow.id}")
+    
+    # Create a flow reference for the exchange
+    flow_ref = olca.Ref(
+        id=saved_flow.id,
+        name=saved_flow.name
+    )
+    
+    # Use the saved flow reference to create the exchange
     exchange = olca.Exchange(
-        flow = ex_flow,
+        flow = flow_ref,
         flow_property = ex_flow_property_factor,
-        unit = unit,
+        unit = unit_obj,
         amount = amount,
         is_input = isInput,
         is_quantitative_reference = isRef
     )
+    
+    return exchange
 
-# search for product flows by keyword
+# search for flows by keyword
 ########################################################
 def search_Flows_by_keywords(client, keywords: str, flow_type: Optional[olca.FlowType] = None):
     """
@@ -613,13 +699,13 @@ def select_flow_property_and_unit(client, flow, flow_name):
     # Get units for selected property
     units = get_flow_units(client, flow.id, selected_property['id'])
     if not units:
-        print(f"❌ No units found for property: {selected_property['name']}")
+        print(f"No units found for property: {selected_property['name']}")
         return None, None
     
     # If only one unit, use it
     if len(units) == 1:
         selected_unit = units[0]
-        print(f"✅ Using unit: {selected_unit['name']} ({selected_unit['symbol']})")
+        print(f"Using unit: {selected_unit['name']} ({selected_unit['symbol']})")
     else:
         # Let user select unit
         print(f"\n📏 Select unit for property '{selected_property['name']}':")
