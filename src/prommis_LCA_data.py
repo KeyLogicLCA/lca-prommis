@@ -415,7 +415,7 @@ def get_lca_df(m):
         if power_var is not None:
             try:
                 power_val = safe_value(power_var)
-                flow.append("Electricity")
+                flow.append("Electricity, AC, 120 V")
                 source.append(source_name)
                 in_out.append("In")
                 category.append("Electricity")
@@ -487,7 +487,7 @@ def get_lca_df(m):
     gas_components = [
         ("Oxygen", "O2"),
         ("Water", "H2O"),
-        ("Carbon Dioxide", "CO2"),
+        ("Carbon dioxide", "CO2"),
         ("Nitrogen", "N2")
     ]
     
