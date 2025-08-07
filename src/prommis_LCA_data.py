@@ -141,6 +141,7 @@ def get_lca_df(m):
     # Water
     try:
         # HOTFIX: The model never sets water concentration. Manually set it to 1000 mg/L.
+        # https://github.com/prommis/prommis/issues/168
         h2o_conc = safe_value(m.fs.leach_liquid_feed.conc_mass_comp[0, "H2O"])
         if h2o_conc < 1e-7:
             h2o_conc = 1e6
@@ -177,7 +178,8 @@ def get_lca_df(m):
     rougher_org_vol = safe_value(m.fs.rougher_org_make_up.flow_vol[0])
     
     # Kerosene
-    # HOTFIX:Kerosene concentration in the new version does not load properly. This is the correct value.
+    # HOTFIX: Kerosene concentration in the new version does not load properly. This is the correct value.
+    # https://github.com/prommis/prommis/issues/169
     try:
         kerosene_conc = safe_value(m.fs.rougher_org_make_up.conc_mass_comp[0, "Kerosene"])
     except Exception:
@@ -197,6 +199,7 @@ def get_lca_df(m):
     
     # DEHPA
     # HOTFIX: DEHPA concentration in the new version does not load properly. This is the correct value.
+    # https://github.com/prommis/prommis/issues/169
     try:
         dehpa_conc = safe_value(m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"])
     except Exception:
@@ -220,6 +223,7 @@ def get_lca_df(m):
     
     # Kerosene
     # HOTFIX: Kerosene concentration in the new version does not load properly. This is the correct value.
+    # https://github.com/prommis/prommis/issues/169
     try:
         kerosene_conc = safe_value(m.fs.cleaner_org_make_up.conc_mass_comp[0, "Kerosene"])
     except Exception:
@@ -239,6 +243,7 @@ def get_lca_df(m):
     
     # DEHPA
     # HOTFIX: DEHPA concentration in the new version does not load properly. This is the correct value.
+    # https://github.com/prommis/prommis/issues/169
     try:
         dehpa_conc = safe_value(m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"])
     except Exception:
