@@ -1,25 +1,48 @@
 import pandas as pd
 import numpy as np
 from typing import Union, List, Optional
+import fedelemflowlist as ffl
 
 
 # Global dictionary for mapping categories to openLCA categories
 category_mapping = {
-    'Water': 'Resource/water',
+    'Water': 'Elementary flows',
+    'Emissions to air': 'Elementary flows',
+    'Emissions to water': 'Elementary flows',
+    'Emissions to ground': 'Elementary flows',
+    'Emission to air': 'Elementary flows',
+    'Emission to water': 'Elementary flows',
+    'Emission to ground': 'Elementary flows',
+    'Resource: Water': 'Elementary flows',
+    'Resource: Air': 'Elementary flows',
+    'Resource: Ground': 'Elementary flows',
+    'Resource: Biotic': 'Elementary flows',
     'Chemicals': 'Technosphere flows',
     'Solid Input': 'Technosphere flows',
     'Solid Output': 'Technosphere flows',
     'Electricity': 'Technosphere flows',
     'Heat': 'Technosphere flows',
-    'Emissions to air': 'emission/air',
-    'Emissions to water': 'emission/water',
-    'Emissions to ground': 'emission/ground',
     'Wastewater': 'Waste flows',
     'Solid Waste': 'Waste flows',
 }
 
+# Global dictionary for mapping categories to contexts in openLCA for elementary flows
+context_mapping = {
+    'Water': 'resource/water',
+    'Emissions to air': 'emission/air',
+    'Emissions to water': 'emission/water',
+    'Emissions to ground': 'emission/ground',
+    'Emission to air': 'emission/air',
+    'Emission to water': 'emission/water',
+    'Emission to ground': 'emission/ground',
+    'Resource: Water': 'resource/water',
+    'Resource: Air': 'resource/air',
+    'Resource: Ground': 'resource/ground',
+    'Resource: Biotic': 'resource/biotic',
+}
+
 # Example usage
-def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Roaster Product'):
+def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Roaster Product', water_type: str = 'raw fresh water'):
     """
     Main function to demonstrate the complete workflow.
     """
@@ -54,7 +77,8 @@ def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Ro
         finalized_df = finalize_df(
             df=df,
             reference_flow=reference_flow,
-            reference_source=reference_source
+            reference_source=reference_source,
+            water_type=water_type
         )
         
         # Get summary
@@ -77,7 +101,8 @@ def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Ro
 
 def finalize_df(df: pd.DataFrame, 
                 reference_flow: str, 
-                reference_source: str) -> pd.DataFrame:
+                reference_source: str,
+                water_type: str = 'raw fresh water') -> pd.DataFrame:
     """
     Finalize the LCA DataFrame by converting to functional units and creating a standardized format.
     
@@ -99,7 +124,7 @@ def finalize_df(df: pd.DataFrame,
     -------
     pandas.DataFrame
         Finalized DataFrame with columns: ['Flow_Name', 'LCA_Amount', 'LCA_Unit', 
-        'Is_Input', 'Reference_Product', 'Flow_Type', 'Description']
+        'Is_Input', 'Reference_Product', 'Flow_Type', 'Category', 'Context', 'UUID', 'Description']
     """
     # Step 1: Convert to functional units
     df_functional = convert_to_functional_unit(df, reference_flow, reference_source)
@@ -118,7 +143,37 @@ def finalize_df(df: pd.DataFrame,
         reference_product = (row['Flow'] == reference_flow and 
                            row['Source'] == reference_source)
         flow_type = row['Category']
-        description = ''  # Left blank as specified
+        # If it is water, we can mention the water type. Otherwise, the description is blank.
+        description = ''
+        if flow_type == 'Water':
+            description = f'{water_type}'
+        
+        # Map the flow type to the openLCA category if it exists in the category_mapping dictionary
+        if flow_type in category_mapping.keys():
+            category = category_mapping[flow_type]
+        else:
+            category = flow_type
+        
+        # Can only generate these for elementary flows. Otherwise, they will be left empty strings.
+        context = ''
+        uuid = ''
+        if category == 'Elementary flows':
+            # So we only define elem_df once:
+            try:
+                elem_df = elem_df
+            except:
+                elem_df = ffl.get_flows()
+            
+            try:
+                context = context_mapping[flow_type]
+                uuid = get_uuid(flow_name, context, elem_df)
+            
+            # We won't be able to generate a UUID if the context cannot be generated
+            except KeyError:
+                print(f'{flow_type} not found in context_mapping. Cannot generate context or UUID for {flow_name}.')
+            
+            except Exception as e:
+                print(f'Error generating UUID for {flow_name}: {e}')
         
         finalized_data.append({
             'Flow_Name': flow_name,
@@ -127,7 +182,10 @@ def finalize_df(df: pd.DataFrame,
             'Is_Input': is_input,
             'Reference_Product': reference_product,
             'Flow_Type': flow_type,
-            'Description': description
+            'Category': category,
+            'Context': context,
+            'UUID': uuid,
+            'Description': description,
         })
     
     # Create the new DataFrame
@@ -135,9 +193,6 @@ def finalize_df(df: pd.DataFrame,
     
     # Step 3: Merge duplicate flows
     finalized_df = merge_duplicate_flows(finalized_df)
-    
-    # Step 4: Map the category to the openLCA category
-    finalized_df['Flow_Type'] = finalized_df['Flow_Type'].map(category_mapping)
     
     return finalized_df
 
@@ -292,6 +347,24 @@ def convert_to_functional_unit(df: pd.DataFrame,
     return df_copy
 
 
+def get_uuid(flow_name: str, context: str, elem_df: pd.DataFrame) -> str:
+    """
+    Add a UUID to a row.
+    """
+    # Look up matching UUID
+    match = elem_df[
+        (elem_df["Flowable"] == flow_name) &
+        (elem_df["Context"] == context)
+    ]
+
+    if not match.empty:
+        uuid = match.iloc[0]["Flow UUID"]
+    else:
+        uuid = None  # or "UUID_NOT_FOUND"
+
+    return uuid
+
+
 def merge_duplicate_flows(df: pd.DataFrame) -> pd.DataFrame:
     """
     Merge duplicate flows that share the same flow name, flow type, and input/output status.
@@ -303,7 +376,7 @@ def merge_duplicate_flows(df: pd.DataFrame) -> pd.DataFrame:
     ----------
     df : pandas.DataFrame
         DataFrame with columns: ['Flow_Name', 'LCA_Amount', 'LCA_Unit', 
-        'Is_Input', 'Reference_Product', 'Flow_Type', 'Description']
+        'Is_Input', 'Reference_Product', 'Flow_Type', 'Category', 'Context', 'UUID', 'Description']
     
     Returns
     -------
@@ -337,7 +410,10 @@ def merge_duplicate_flows(df: pd.DataFrame) -> pd.DataFrame:
             'Is_Input': is_input,
             'Reference_Product': is_reference_product,
             'Flow_Type': flow_type,
-            'Description': first_row['Description']
+            'Category': first_row['Category'],
+            'Context': first_row['Context'],
+            'UUID': first_row['UUID'],
+            'Description': first_row['Description'],
         }
         
         merged_data.append(merged_row)
@@ -574,7 +650,7 @@ def get_finalize_summary(df: pd.DataFrame) -> dict:
   
 if __name__ == "__main__":
     # Run example usage
-    finalized_df = main(reference_flow='99.85% REO Product', reference_source='Roaster Product')
+    finalized_df = main(reference_flow='99.85% REO Product', reference_source='Roaster Product', water_type='raw fresh water')
     print("Finalized DataFrame:")
     print(finalized_df)
     print("\n" + "="*60 + "\n")
