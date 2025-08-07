@@ -146,7 +146,11 @@ def finalize_df(df: pd.DataFrame,
         # If it is water, we can mention the water type. Otherwise, the description is blank.
         description = ''
         if flow_type == 'Water':
-            description = f'{water_type}'
+            try:
+                description = f'{water_type}'
+            except:
+                print(f'Error getting water type {water_type}: {e}')
+                description = ''
         
         # Map the flow type to the openLCA category if it exists in the category_mapping dictionary
         if flow_type in category_mapping.keys():
