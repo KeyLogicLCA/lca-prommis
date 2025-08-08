@@ -6,39 +6,39 @@ import fedelemflowlist as ffl
 
 # Global dictionary for mapping categories to openLCA categories
 category_mapping = {
-    'Water': 'Elementary flows',
-    'Emissions to air': 'Elementary flows',
-    'Emissions to water': 'Elementary flows',
-    'Emissions to ground': 'Elementary flows',
-    'Emission to air': 'Elementary flows',
-    'Emission to water': 'Elementary flows',
-    'Emission to ground': 'Elementary flows',
-    'Resource: Water': 'Elementary flows',
-    'Resource: Air': 'Elementary flows',
-    'Resource: Ground': 'Elementary flows',
-    'Resource: Biotic': 'Elementary flows',
-    'Chemicals': 'Technosphere flows',
-    'Solid Input': 'Technosphere flows',
-    'Solid Output': 'Technosphere flows',
-    'Electricity': 'Technosphere flows',
-    'Heat': 'Technosphere flows',
-    'Wastewater': 'Waste flows',
-    'Solid Waste': 'Waste flows',
+    'water': 'Elementary flows',
+    'emissions to air': 'Elementary flows',
+    'emissions to water': 'Elementary flows',
+    'emissions to ground': 'Elementary flows',
+    'emission to air': 'Elementary flows',
+    'emission to water': 'Elementary flows',
+    'emission to ground': 'Elementary flows',
+    'resource: water': 'Elementary flows',
+    'resource: air': 'Elementary flows',
+    'resource: ground': 'Elementary flows',
+    'resource: biotic': 'Elementary flows',
+    'chemicals': 'Technosphere flows',
+    'solid input': 'Technosphere flows',
+    'solid output': 'Technosphere flows',
+    'electricity': 'Technosphere flows',
+    'heat': 'Technosphere flows',
+    'wastewater': 'Waste flows',
+    'solid waste': 'Waste flows',
 }
 
 # Global dictionary for mapping categories to contexts in openLCA for elementary flows
 context_mapping = {
-    'Water': 'resource/water',
-    'Emissions to air': 'emission/air',
-    'Emissions to water': 'emission/water',
-    'Emissions to ground': 'emission/ground',
-    'Emission to air': 'emission/air',
-    'Emission to water': 'emission/water',
-    'Emission to ground': 'emission/ground',
-    'Resource: Water': 'resource/water',
-    'Resource: Air': 'resource/air',
-    'Resource: Ground': 'resource/ground',
-    'Resource: Biotic': 'resource/biotic',
+    'water': 'resource/water',
+    'emissions to air': 'emission/air',
+    'emissions to water': 'emission/water',
+    'emissions to ground': 'emission/ground',
+    'emission to air': 'emission/air',
+    'emission to water': 'emission/water',
+    'emission to ground': 'emission/ground',
+    'resource: water': 'resource/water',
+    'resource: air': 'resource/air',
+    'resource: ground': 'resource/ground',
+    'resource: biotic': 'resource/biotic',
 }
 
 # Example usage
@@ -153,8 +153,9 @@ def finalize_df(df: pd.DataFrame,
                 description = ''
         
         # Map the flow type to the openLCA category if it exists in the category_mapping dictionary
-        if flow_type in category_mapping.keys():
-            category = category_mapping[flow_type]
+        lower_flow_type = flow_type.lower()
+        if lower_flow_type in category_mapping.keys():
+            category = category_mapping[lower_flow_type]
         else:
             category = flow_type
         
@@ -169,7 +170,9 @@ def finalize_df(df: pd.DataFrame,
                 elem_df = ffl.get_flows()
             
             try:
-                context = context_mapping[flow_type]
+                lower_flow_type = flow_type.lower()
+                print(flow_type)
+                context = context_mapping[lower_flow_type]
                 uuid = get_uuid(flow_name, context, elem_df)
             
             # We won't be able to generate a UUID if the context cannot be generated
