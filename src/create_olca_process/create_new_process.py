@@ -1,6 +1,12 @@
 ########################################################################################################
 # TODO's in this script:
 # Writing/editing functions
+    # Develop function to create empty process                                              --> DONE (create_empty_process.py in create_new_process.py module)
+    # Develop function to create exchange for reference product flow                        --> DONE (create_ref_product_exchange.py in create_new_process.py module)
+    # Develop function to search for flows by keywords                                      --> DONE (search_Flows_by_keywords.py in flow_search_function.py module)
+    # Develop function to get processes associated with a specific flow                     --> DONE (find_processes_by_flow.py in flow_search_function.py module)
+    # Develop function to create exchange for elementary flows 
+    # Develop function to create exchange for product/waste flows (given flow + process)
     # Develop function to get flow property of the flow selected by the user
     # Develop function to get the available units for the flow selected by the user
     # Use function from netlolca library to create exchange for the selected flow 
@@ -9,7 +15,8 @@
 # Testing/debugging
     # Test (and debug if needed): create_empty_process                                      --> DONE   
     # Test (and debug if needed): create_ref_product_exchange                               --> DONE
-    # Test (and debug if needed): search_Flows_by_keywords
+    # Test (and debug if needed): search_Flows_by_keywords                                  --> DONE (search_Flows_by_keywords.py in flow_search_function.py module)
+    # Test (and debug if needed): find_processes_by_flow                                    --> DONE (find_processes_by_flow.py in flow_search_function.py module)
     # Test (and debug if needed): show_flow_process_selection_menu
     # Test (and debug if needed): get_user_search_choice
     # Test (and debug if needed): create_new_process
@@ -85,7 +92,7 @@ def create_new_process(client, df, process_name, process_description):
     # Loop through the dataframe, find reference product, and create exchange for it
     
     for index, row in df.iterrows():
-    #TODO: modify function to read flow type - if  flow type is elementary, then skip
+    #TODO: modify function to read flow type - if flow type is elementary, then skip
         product = row['Flow_Name']
         if row['Reference_Product'] == True:
             exchange = create_ref_product_exchange(client, product, row['LCA_Amount'], row['LCA_Unit'], row['Is_Input'], row['Reference_Product'])
