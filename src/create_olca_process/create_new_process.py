@@ -5,7 +5,7 @@
     # Develop function to create exchange for reference product flow                        --> DONE (create_ref_product_exchange.py in create_new_process.py module)
     # Develop function to search for flows by keywords                                      --> DONE (search_Flows_by_keywords.py in flow_search_function.py module)
     # Develop function to get processes associated with a specific flow                     --> DONE (find_processes_by_flow.py in flow_search_function.py module)
-    # Develop function to create exchange for elementary flows 
+    # Develop function to create exchange for elementary flows                              --> DONE
     # Develop function to create exchange for product/waste flows (given flow + process)
     # Develop function to get flow property of the flow selected by the user
     # Develop function to get the available units for the flow selected by the user
@@ -17,6 +17,7 @@
     # Test (and debug if needed): create_ref_product_exchange                               --> DONE
     # Test (and debug if needed): search_Flows_by_keywords                                  --> DONE (search_Flows_by_keywords.py in flow_search_function.py module)
     # Test (and debug if needed): find_processes_by_flow                                    --> DONE (find_processes_by_flow.py in flow_search_function.py module)
+    # Test (and debug if needed): create_exchange_elementary_flow                           --> In progress
     # Test (and debug if needed): show_flow_process_selection_menu
     # Test (and debug if needed): get_user_search_choice
     # Test (and debug if needed): create_new_process
@@ -25,10 +26,26 @@
     # Test (and debug if needed): select_flow_property_and_unit
 
 # Other
-    # check if openlca has a limit on the number of characters for the name
-    # check if openlca has a limit on the number of characters for the description 
-    # for elementary flows - Daniel will add uuids for each flow (FEDEFL)
-    # create openLCA database with all the available processes/providers
+    # check if openlca has a limit on the number of characters for the name                 TODO 2
+    # check if openlca has a limit on the number of characters for the description          TODO 3
+    # for elementary flows - Daniel will add uuids for each flow (FEDEFL)                   --> DONE
+    # create openLCA database with all the available processes/providers                    TODO 1   
+
+# TODO - 4 for Daniel - TODO Notes
+# write a script to:
+    # ask the user for a flow name (keyword) and flow type (product, waste) - keyword search
+    # the code uses search_Flows_by_keywords.py to search for flows
+    # ask the user to pick a flow from the list of matching flows
+    # the code uses find_processes_by_flow.py to find processes associated with the selected flow
+    # ask the user to pick a process from the list of matching processes
+    # IMPORTANT: write this as a function in separate module
+
+# TODO - 1 for Daniel - TODO Notes
+    # create empty database
+    # add FEDEFL database
+    # Add databases/libraries from LCACommons
+    # optional: search for the chemicals we need in this study
+
 ########################################################################################################
 
 # This script creates a new process in openLCA
