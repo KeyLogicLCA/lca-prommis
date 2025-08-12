@@ -151,17 +151,17 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
         
         # Water and wastewater should be kg if a concentration is given
         # Otherwise, they should be L
-        # All water will be converted to L or kg later
-        if 'water' in category or 'wastewater' in category:
+        # All water will be converted to the desired unit later
+        if 'water' in category.lower() or 'wastewater' in category.lower():
             if 'g' in unit1.lower() or 'g' in unit2.lower():
                 target_unit = units.kg
             else:
                 target_unit = units.L
         # Electricity should be kWh
-        elif 'electricity' in category:
+        elif 'electricity' in category.lower():
             target_unit = units.kW * units.hr  # kWh
         # Heat should be MJ
-        elif 'heat' in category:
+        elif 'heat' in category.lower():
             target_unit = units.MJ
         # If the unit is mol, we'll convert to kg later
         elif 'mol' in unit1.lower():
@@ -176,21 +176,26 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
         try:
             converted_expression = units.convert(expression, to_units=target_unit)
             
-            if 'water' in category or 'wastewater' in category:
+            if 'water' in category and not 'wastewater' in category:
                 val = value(converted_expression)
                 
-                if water_unit == 'm3':
+                if water_unit.lower() == 'm3':
                     new_unit = 'm3'
                     val /= 1000
                 # No conversion required: 1 kg water = 1 L water
                 # PrOMMiS gives water density as 1 kg/L, so using 1 kg/L here allows for consistency/compatability
-                elif water_unit == 'L':
+                elif water_unit.lower() == 'l':
                     new_unit = 'L'
-                elif water_unit == 'kg':
+                elif water_unit.lower() == 'kg':
                     new_unit = 'kg'
                 else:
                     new_unit = 'm3'
                     val /= 1000
+            
+            # Wastewater is only accepted as kg typically
+            elif 'wastewater' in category.lower():
+                val = value(converted_expression)
+                new_unit = 'kg'
             
             # If the target unit is mol and mol_to_kg is True, convert to kg
             elif 'mol' in unit1.lower() and mol_to_kg:
