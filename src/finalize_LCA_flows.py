@@ -1,11 +1,108 @@
 import pandas as pd
 import numpy as np
 from typing import Union, List, Optional
+import fedelemflowlist as ffl
+
+
+# Global dictionary for mapping categories to openLCA categories
+category_mapping = {
+    'water': 'Elementary flows',
+    'emissions to air': 'Elementary flows',
+    'emissions to water': 'Elementary flows',
+    'emissions to ground': 'Elementary flows',
+    'emission to air': 'Elementary flows',
+    'emission to water': 'Elementary flows',
+    'emission to ground': 'Elementary flows',
+    'resource: water': 'Elementary flows',
+    'resource: air': 'Elementary flows',
+    'resource: ground': 'Elementary flows',
+    'resource: biotic': 'Elementary flows',
+    'chemicals': 'Technosphere flows',
+    'solid input': 'Technosphere flows',
+    'solid output': 'Technosphere flows',
+    'electricity': 'Technosphere flows',
+    'heat': 'Technosphere flows',
+    'wastewater': 'Waste flows',
+    'solid waste': 'Waste flows',
+}
+
+# Global dictionary for mapping categories to contexts in openLCA for elementary flows
+context_mapping = {
+    'water': 'resource/water',
+    'emissions to air': 'emission/air',
+    'emissions to water': 'emission/water',
+    'emissions to ground': 'emission/ground',
+    'emission to air': 'emission/air',
+    'emission to water': 'emission/water',
+    'emission to ground': 'emission/ground',
+    'resource: water': 'resource/water',
+    'resource: air': 'resource/air',
+    'resource: ground': 'resource/ground',
+    'resource: biotic': 'resource/biotic',
+}
+
+# Example usage
+def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Roaster Product', water_type: str = 'raw fresh water'):
+    """
+    Main function to demonstrate the complete workflow.
+    """
+    df = pd.read_csv('lca_df_converted.csv')
+    
+    # Run the merge_flows function for the feed
+    REO_list = [
+        "Yttrium Oxide",
+        "Lanthanum Oxide",
+        "Cerium Oxide",
+        "Praseodymium Oxide",
+        "Neodymium Oxide",
+        "Samarium Oxide",
+        "Gadolinium Oxide",
+        "Dysprosium Oxide",
+    ]
+    df = merge_flows(df, merge_source='Solid Feed', new_flow_name='374 ppm REO Feed', value_2_merge=REO_list)
+    # This 374 ppm value is directly calculated from the flowsheet. The original study actually used 357 ppm as the feed concentration.
+    
+    # Run the merge_flows function for the product
+    df = merge_flows(df, merge_source='Roaster Product', new_flow_name='99.85% REO Product')
+    
+    # Run the merge_flows function for the liquid waste flows
+    df = merge_flows(df, merge_source='Wastewater', new_flow_name='Wastewater', merge_column='Category') 
+    # Note: some of these streams are organic waste, but they're treated as wastewater
+
+    # Run the merge_flows function for the solid waste flows
+    df = merge_flows(df, merge_source='Solid Waste', new_flow_name='Solid Waste', merge_column='Category') 
+    
+    # Run the finalize_df function
+    try:
+        finalized_df = finalize_df(
+            df=df,
+            reference_flow=reference_flow,
+            reference_source=reference_source,
+            water_type=water_type
+        )
+        
+        # Get summary
+        summary = get_finalize_summary(finalized_df)
+        print("Summary:")
+        for key, value in summary.items():
+            if key != 'flow_type_breakdown':
+                print(f"  {key}: {value}")
+        
+        print("\nFlow Type Breakdown:")
+        for flow_type, count in summary['flow_type_breakdown'].items():
+            print(f"  {flow_type}: {count}")
+            
+    except Exception as e:
+        print(f"Error during finalization: {e}")
+    
+    finalized_df.to_csv('lca_df_finalized.csv', index=False)
+    return finalized_df
 
 
 def finalize_df(df: pd.DataFrame, 
                 reference_flow: str, 
-                reference_source: str) -> pd.DataFrame:
+                reference_source: str,
+                water_type: str = 'raw fresh water') -> pd.DataFrame:
     """
     Finalize the LCA DataFrame by converting to functional units and creating a standardized format.
     
@@ -27,7 +124,7 @@ def finalize_df(df: pd.DataFrame,
     -------
     pandas.DataFrame
         Finalized DataFrame with columns: ['Flow_Name', 'LCA_Amount', 'LCA_Unit', 
-        'Is_Input', 'Reference_Product', 'Flow_Type', 'Description']
+        'Is_Input', 'Reference_Product', 'Flow_Type', 'Category', 'Context', 'UUID', 'Description']
     """
     # Step 1: Convert to functional units
     df_functional = convert_to_functional_unit(df, reference_flow, reference_source)
@@ -46,7 +143,44 @@ def finalize_df(df: pd.DataFrame,
         reference_product = (row['Flow'] == reference_flow and 
                            row['Source'] == reference_source)
         flow_type = row['Category']
-        description = ''  # Left blank as specified
+        # If it is water, we can mention the water type. Otherwise, the description is blank.
+        description = ''
+        if flow_type == 'Water':
+            try:
+                description = f'{water_type}'
+            except:
+                print(f'Error getting water type {water_type}: {e}')
+                description = ''
+        
+        # Map the flow type to the openLCA category if it exists in the category_mapping dictionary
+        lower_flow_type = flow_type.lower()
+        if lower_flow_type in category_mapping.keys():
+            category = category_mapping[lower_flow_type]
+        else:
+            category = flow_type
+        
+        # Can only generate these for elementary flows. Otherwise, they will be left empty strings.
+        context = ''
+        uuid = ''
+        if category == 'Elementary flows':
+            # So we only define elem_df once:
+            try:
+                elem_df = elem_df
+            except:
+                elem_df = ffl.get_flows()
+            
+            try:
+                lower_flow_type = flow_type.lower()
+                print(flow_type)
+                context = context_mapping[lower_flow_type]
+                uuid = get_uuid(flow_name, context, elem_df)
+            
+            # We won't be able to generate a UUID if the context cannot be generated
+            except KeyError:
+                print(f'{flow_type} not found in context_mapping. Cannot generate context or UUID for {flow_name}.')
+            
+            except Exception as e:
+                print(f'Error generating UUID for {flow_name}: {e}')
         
         finalized_data.append({
             'Flow_Name': flow_name,
@@ -55,7 +189,10 @@ def finalize_df(df: pd.DataFrame,
             'Is_Input': is_input,
             'Reference_Product': reference_product,
             'Flow_Type': flow_type,
-            'Description': description
+            'Category': category,
+            'Context': context,
+            'UUID': uuid,
+            'Description': description,
         })
     
     # Create the new DataFrame
@@ -66,10 +203,11 @@ def finalize_df(df: pd.DataFrame,
     
     return finalized_df
 
-#TODO: allow you to choose the column name to merge on as well
+
 def merge_flows(df: pd.DataFrame, 
                 merge_source: str, 
                 new_flow_name: str, 
+                merge_column: str = 'Source',
                 value_1_merge: Union[str, List[str]] = "same",
                 value_2_merge: Union[str, List[str]] = "same", 
                 LCA_amount_merge: Union[str, List[str]] = "total",
@@ -88,6 +226,8 @@ def merge_flows(df: pd.DataFrame,
         Source name to match for merging flows
     new_flow_name : str
         Name for the new merged flow
+    merge_column : str, optional
+        Column name to merge on (default: 'Source')
     value_1_merge : str or list, optional
         Logic for handling Value 1:
         - "same": Keep the value from the first matching flow
@@ -115,11 +255,11 @@ def merge_flows(df: pd.DataFrame,
     df_copy = df.copy()
     
     # Find all flows with matching source
-    matching_mask = df_copy['Source'] == merge_source
+    matching_mask = df_copy[merge_column] == merge_source
     matching_flows = df_copy[matching_mask]
     
     if matching_flows.empty:
-        print(f"Warning: No flows found with source '{merge_source}'")
+        print(f"Warning: No flows found with {merge_column} '{merge_source}'")
         return df_copy
     
     # Get the first matching flow as template
@@ -131,17 +271,17 @@ def merge_flows(df: pd.DataFrame,
     new_flow['Flow'] = new_flow_name
     
     # Handle Value 1 merging
-    new_flow['Value 1'] = _merge_values(df_copy, merge_source, 'Value 1', value_1_merge)
+    new_flow['Value 1'] = _merge_values(df_copy, merge_source, 'Value 1', value_1_merge, merge_column)
     
     # Handle Value 2 merging
-    new_flow['Value 2'] = _merge_values(df_copy, merge_source, 'Value 2', value_2_merge)
+    new_flow['Value 2'] = _merge_values(df_copy, merge_source, 'Value 2', value_2_merge, merge_column)
     
     # Handle LCA Amount merging (if LCA Amount column exists)
     if 'LCA Amount' in df_copy.columns:
-        new_flow['LCA Amount'] = _merge_values(df_copy, merge_source, 'LCA Amount', LCA_amount_merge)
+        new_flow['LCA Amount'] = _merge_values(df_copy, merge_source, 'LCA Amount', LCA_amount_merge, merge_column)
     
     # Determine which flows to delete
-    flows_to_delete = _get_flows_to_delete(df_copy, merge_source, delete)
+    flows_to_delete = _get_flows_to_delete(df_copy, merge_source, delete, merge_column)
     
     # Delete specified flows
     if flows_to_delete:
@@ -149,7 +289,7 @@ def merge_flows(df: pd.DataFrame,
         # Adjust insert index if the first flow was deleted
         if insert_index in flows_to_delete:
             # Find the new position where the first flow was
-            remaining_flows = df_copy[df_copy['Source'] == merge_source]
+            remaining_flows = df_copy[df_copy[merge_column] == merge_source]
             if not remaining_flows.empty:
                 insert_index = remaining_flows.index[0]
             else:
@@ -214,6 +354,24 @@ def convert_to_functional_unit(df: pd.DataFrame,
     return df_copy
 
 
+def get_uuid(flow_name: str, context: str, elem_df: pd.DataFrame) -> str:
+    """
+    Add a UUID to a row.
+    """
+    # Look up matching UUID
+    match = elem_df[
+        (elem_df["Flowable"] == flow_name) &
+        (elem_df["Context"] == context)
+    ]
+
+    if not match.empty:
+        uuid = match.iloc[0]["Flow UUID"]
+    else:
+        uuid = None  # or "UUID_NOT_FOUND"
+
+    return uuid
+
+
 def merge_duplicate_flows(df: pd.DataFrame) -> pd.DataFrame:
     """
     Merge duplicate flows that share the same flow name, flow type, and input/output status.
@@ -225,7 +383,7 @@ def merge_duplicate_flows(df: pd.DataFrame) -> pd.DataFrame:
     ----------
     df : pandas.DataFrame
         DataFrame with columns: ['Flow_Name', 'LCA_Amount', 'LCA_Unit', 
-        'Is_Input', 'Reference_Product', 'Flow_Type', 'Description']
+        'Is_Input', 'Reference_Product', 'Flow_Type', 'Category', 'Context', 'UUID', 'Description']
     
     Returns
     -------
@@ -259,7 +417,10 @@ def merge_duplicate_flows(df: pd.DataFrame) -> pd.DataFrame:
             'Is_Input': is_input,
             'Reference_Product': is_reference_product,
             'Flow_Type': flow_type,
-            'Description': first_row['Description']
+            'Category': first_row['Category'],
+            'Context': first_row['Context'],
+            'UUID': first_row['UUID'],
+            'Description': first_row['Description'],
         }
         
         merged_data.append(merged_row)
@@ -278,7 +439,8 @@ def merge_duplicate_flows(df: pd.DataFrame) -> pd.DataFrame:
 def _merge_values(df: pd.DataFrame, 
                   source: str, 
                   value_column: str, 
-                  merge_logic: Union[str, List[str]]) -> float:
+                  merge_logic: Union[str, List[str]],
+                  merge_column: str = 'Source') -> float:
     """
     Helper function to merge values based on the specified logic.
     
@@ -298,7 +460,7 @@ def _merge_values(df: pd.DataFrame,
     float
         Merged value
     """
-    matching_flows = df[df['Source'] == source]
+    matching_flows = df[df[merge_column] == source]
     
     if merge_logic == "same":
         # Return the value from the first matching flow
@@ -320,7 +482,8 @@ def _merge_values(df: pd.DataFrame,
 
 def _get_flows_to_delete(df: pd.DataFrame, 
                         source: str, 
-                        delete_logic: Union[str, List[str]]) -> List[int]:
+                        delete_logic: Union[str, List[str]],
+                        merge_column: str = 'Source') -> List[int]:
     """
     Helper function to determine which flows should be deleted.
     
@@ -338,7 +501,7 @@ def _get_flows_to_delete(df: pd.DataFrame,
     list
         List of indices to delete
     """
-    matching_flows = df[df['Source'] == source]
+    matching_flows = df[df[merge_column] == source]
     
     if delete_logic == "all":
         # Delete all flows with matching source
@@ -387,7 +550,8 @@ def _insert_flow_at_position(df: pd.DataFrame,
 def validate_merge_parameters(df: pd.DataFrame, 
                              merge_source: str, 
                              value_1_merge: Union[str, List[str]], 
-                             value_2_merge: Union[str, List[str]]) -> bool:
+                            value_2_merge: Union[str, List[str]],
+                             merge_column: str = 'Source') -> bool:
     """
     Validate parameters for the merge_flows function.
     
@@ -408,14 +572,14 @@ def validate_merge_parameters(df: pd.DataFrame,
         True if parameters are valid
     """
     # Check if source exists
-    if merge_source not in df['Source'].values:
+    if merge_source not in df[merge_column].values:
         print(f"Warning: Source '{merge_source}' not found in DataFrame")
         return False
     
     # Check if flow names in lists exist
     for merge_logic, column_name in [(value_1_merge, 'Value 1'), (value_2_merge, 'Value 2')]:
         if isinstance(merge_logic, list):
-            matching_flows = df[df['Source'] == merge_source]
+            matching_flows = df[df[merge_column] == merge_source]
             missing_flows = [name for name in merge_logic if name not in matching_flows['Flow'].values]
             if missing_flows:
                 print(f"Warning: Flows {missing_flows} not found for {column_name} merge")
@@ -445,7 +609,7 @@ def validate_finalize_parameters(df: pd.DataFrame,
         True if parameters are valid
     """
     # Check if required columns exist
-    required_columns = ['Flow', 'Source', 'In/Out', 'Category', 'LCA Unit', 'LCA Amount']
+    required_columns = ['Flow', 'Source', 'In/Out', 'Flow_Type', 'LCA Unit', 'LCA Amount']
     missing_columns = [col for col in required_columns if col not in df.columns]
     
     if missing_columns:
@@ -490,67 +654,10 @@ def get_finalize_summary(df: pd.DataFrame) -> dict:
     
     return summary
 
-
-# Example usage and testing functions
-
-def main():
-    """
-    Main function to demonstrate the complete workflow.
-    """
-    df = pd.read_csv('lca_df_converted.csv')
-    
-    print("=== Finalize DataFrame Workflow ===\n")
-    # print("Converted LCA DataFrame Head:")
-    # print(df.head())
-    # print("\n" + "="*60 + "\n")
-    
-    # Run the merge_flows function for the feed
-    REO_list = [
-        "Yttrium Oxide",
-        "Lanthanum Oxide",
-        "Cerium Oxide",
-        "Praseodymium Oxide",
-        "Neodymium Oxide",
-        "Samarium Oxide",
-        "Gadolinium Oxide",
-        "Dysprosium Oxide",
-    ]
-    df = merge_flows(df, merge_source='Solid Feed', new_flow_name='374 ppm REO Feed', value_2_merge=REO_list)
-    
-    # Run the merge_flows function for the product
-    df = merge_flows(df, merge_source='Roaster Product', new_flow_name='99.85% REO Product')
-    
-    # Run the finalize_df function
-    try:
-        finalized_df = finalize_df(
-            df=df,
-            reference_flow='99.85% REO Product',
-            reference_source='Roaster Product'
-        )
-        
-        # print("Finalized DataFrame Head:")
-        # print(finalized_df.head())
-        # print("\n" + "="*60 + "\n")
-        
-        # Get summary
-        summary = get_finalize_summary(finalized_df)
-        print("Summary:")
-        for key, value in summary.items():
-            if key != 'flow_type_breakdown':
-                print(f"  {key}: {value}")
-        
-        print("\nFlow Type Breakdown:")
-        for flow_type, count in summary['flow_type_breakdown'].items():
-            print(f"  {flow_type}: {count}")
-            
-    except Exception as e:
-        print(f"Error during finalization: {e}")
-
-    finalized_df.to_csv('lca_df_finalized.csv', index=False)
-    return finalized_df
-
+  
 if __name__ == "__main__":
     # Run example usage
-    main()
-
-
+    finalized_df = main(reference_flow='99.85% REO Product', reference_source='Roaster Product', water_type='raw fresh water')
+    print("Finalized DataFrame:")
+    print(finalized_df)
+    print("\n" + "="*60 + "\n")
