@@ -4,6 +4,51 @@ from typing import Union, List, Optional
 import fedelemflowlist as ffl
 
 
+"""
+LCA Flows Finalization and Processing Module
+
+This module provides comprehensive functionality for processing, merging, and finalizing
+Life Cycle Assessment (LCA) flow data. It is designed to work with LCA DataFrames
+that contain flow information from various sources and convert them into standardized,
+functional unit-based formats suitable for openLCA and other LCA software.
+
+Key Features:
+- Merge multiple flows into consolidated categories (e.g., REO feeds, waste streams)
+- Convert flows to functional units based on reference products
+- Map flow types to openLCA categories and contexts
+- Generate UUIDs for elementary flows using the Federal LCA Commons flow list
+- Handle duplicate flows by merging and summing amounts
+- Provide comprehensive validation and summary statistics
+
+Main Functions:
+- main(): Orchestrates the complete workflow for REO processing
+- finalize_df(): Converts flows to functional units and standardizes format
+- merge_flows(): Combines flows based on source or category
+- convert_to_functional_unit(): Normalizes flows using reference flow scaling
+- get_uuid(): Retrieves UUIDs for elementary flows
+- merge_duplicate_flows(): Consolidates duplicate flow entries
+
+Usage:
+    from finalize_LCA_flows import main
+    
+    # Process REO flows with default parameters
+    finalized_df = main()
+    
+    # Customize reference flow and water type
+    finalized_df = main(
+        reference_flow='Custom Product',
+        reference_source='Custom Source',
+        water_type='treated water'
+    )
+
+Dependencies:
+- pandas: Data manipulation and analysis
+- numpy: Numerical operations
+- fedelemflowlist: Federal LCA Commons flow list access
+- typing: Type hints for function parameters and returns
+"""
+
+
 # Global dictionary for mapping categories to openLCA categories
 category_mapping = {
     'water': 'Elementary flows',
@@ -44,7 +89,36 @@ context_mapping = {
 # Example usage
 def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Roaster Product', water_type: str = 'raw fresh water'):
     """
-    Main function to demonstrate the complete workflow.
+    Main function to demonstrate the complete LCA flows processing workflow.
+    
+    This function orchestrates the entire process of merging, finalizing, and converting
+    LCA flows to functional units. It performs the following steps:
+    1. Loads the converted LCA DataFrame
+    2. Merges REO feed flows into a single 374 ppm REO Feed
+    3. Merges roaster product flows into a 99.85% REO Product
+    4. Consolidates wastewater and solid waste flows
+    5. Finalizes the DataFrame with proper categorization and UUIDs
+    6. Saves the result and provides a summary
+    
+    Parameters
+    ----------
+    reference_flow : str, optional
+        Name of the reference flow for functional unit conversion (default: '99.85% REO Product')
+    reference_source : str, optional
+        Source of the reference flow (default: 'Roaster Product')
+    water_type : str, optional
+        Type of water to specify in descriptions (default: 'raw fresh water')
+    
+    Returns
+    -------
+    pandas.DataFrame
+        The finalized LCA DataFrame with all flows converted to functional units
+        
+    Notes
+    -----
+    The 374 ppm REO feed concentration is calculated from the flowsheet, though the
+    original study used 357 ppm. Some wastewater streams are organic waste but are
+    treated as wastewater for consistency.
     """
     df = pd.read_csv('lca_df_converted.csv')
     
@@ -308,8 +382,9 @@ def convert_to_functional_unit(df: pd.DataFrame,
     """
     Convert all flows to a functional unit based on a reference flow.
     
-    This function finds a reference flow and uses its Value 1 as a scaling factor
-    to normalize all other flows in the DataFrame.
+    This function finds a reference flow and uses its LCA Amount as a scaling factor
+    to normalize all other flows in the DataFrame. Both 'Value 1' and 'LCA Amount'
+    columns are scaled by the same factor.
     
     Parameters
     ----------
@@ -323,7 +398,17 @@ def convert_to_functional_unit(df: pd.DataFrame,
     Returns
     -------
     pandas.DataFrame
-        DataFrame with all Value 1 values normalized by the reference flow
+        DataFrame with all Value 1 and LCA Amount values normalized by the reference flow
+        
+    Raises
+    ------
+    ValueError
+        If the reference flow is not found or has an LCA Amount of 0
+        
+    Notes
+    -----
+    If multiple flows match the reference criteria, a warning is printed and the first
+    match is used. The scaling factor is applied to both 'Value 1' and 'LCA Amount' columns.
     """
     # Create a copy to avoid modifying the original
     df_copy = df.copy()
@@ -356,7 +441,32 @@ def convert_to_functional_unit(df: pd.DataFrame,
 
 def get_uuid(flow_name: str, context: str, elem_df: pd.DataFrame) -> str:
     """
-    Add a UUID to a row.
+    Retrieve the UUID for a specific flow from the elementary flows database.
+    
+    This function searches the elementary flows DataFrame to find a matching flow
+    based on the flow name and context, then returns the corresponding Flow UUID.
+    If no match is found, returns None.
+    
+    Parameters
+    ----------
+    flow_name : str
+        The name of the flow to search for (must match the "Flowable" column)
+    context : str
+        The context of the flow (e.g., 'emission/air', 'resource/water')
+    elem_df : pandas.DataFrame
+        DataFrame containing elementary flows with columns: "Flowable", "Context", "Flow UUID"
+    
+    Returns
+    -------
+    str or None
+        The Flow UUID if a match is found, None if no match exists
+        
+    Examples
+    --------
+    >>> elem_df = ffl.get_flows()
+    >>> uuid = get_uuid("Carbon dioxide", "emission/air", elem_df)
+    >>> print(uuid)
+    '12345678-1234-1234-1234-123456789abc'
     """
     # Look up matching UUID
     match = elem_df[
@@ -444,21 +554,35 @@ def _merge_values(df: pd.DataFrame,
     """
     Helper function to merge values based on the specified logic.
     
+    This function handles the merging of numeric values from flows that share the same
+    source (or other specified column). It supports three merging strategies: keeping
+    the first value, summing all values, or summing only values from specific flows.
+    
     Parameters
     ----------
     df : pandas.DataFrame
         DataFrame containing the flows
     source : str
-        Source to match
+        Source value to match in the merge_column
     value_column : str
-        Column name ('Value 1' or 'Value 2')
+        Column name containing the values to merge ('Value 1', 'Value 2', or 'LCA Amount')
     merge_logic : str or list
-        Logic for merging values
+        Logic for merging values:
+        - "same": Keep the value from the first matching flow
+        - "total": Sum all values from matching flows
+        - list: Sum values from flows with names in the list
+    merge_column : str, optional
+        Column name to use for matching flows (default: 'Source')
     
     Returns
     -------
     float
-        Merged value
+        Merged value according to the specified logic
+        
+    Notes
+    -----
+    If merge_logic is a list, only flows with names in that list are included in the sum.
+    If merge_logic is not recognized, defaults to "same" behavior.
     """
     matching_flows = df[df[merge_column] == source]
     
@@ -485,21 +609,36 @@ def _get_flows_to_delete(df: pd.DataFrame,
                         delete_logic: Union[str, List[str]],
                         merge_column: str = 'Source') -> List[int]:
     """
-    Helper function to determine which flows should be deleted.
+    Helper function to determine which flows should be deleted after merging.
+    
+    This function identifies the indices of flows that should be removed from the
+    DataFrame based on the deletion logic. It supports deleting all matching flows
+    or only specific flows by name.
     
     Parameters
     ----------
     df : pandas.DataFrame
         DataFrame containing the flows
     source : str
-        Source to match
+        Source value to match in the merge_column
     delete_logic : str or list
-        Logic for determining deletions
+        Logic for determining deletions:
+        - "all": Delete all flows with matching source
+        - list: Delete flows with names in the list that have matching source
+        - other: Don't delete any flows
+    merge_column : str, optional
+        Column name to use for matching flows (default: 'Source')
     
     Returns
     -------
     list
-        List of indices to delete
+        List of DataFrame indices to delete
+        
+    Notes
+    -----
+    If delete_logic is a list, only flows with names in that list AND matching source
+    are marked for deletion. If delete_logic is anything other than "all" or a list,
+    no flows are deleted.
     """
     matching_flows = df[df[merge_column] == source]
     
@@ -521,21 +660,31 @@ def _insert_flow_at_position(df: pd.DataFrame,
                             new_flow: pd.Series, 
                             position: int) -> pd.DataFrame:
     """
-    Helper function to insert a new flow at a specific position.
+    Helper function to insert a new flow at a specific position in the DataFrame.
+    
+    This function converts the DataFrame to a list of dictionaries, inserts the new
+    flow at the specified position, and converts back to a DataFrame. This approach
+    preserves the order of flows while maintaining all column data.
     
     Parameters
     ----------
     df : pandas.DataFrame
-        DataFrame to insert into
+        DataFrame to insert the new flow into
     new_flow : pandas.Series
-        New flow to insert
+        New flow data to insert (should have the same columns as df)
     position : int
-        Position to insert at
-    
+        Index position where the new flow should be inserted
+        
     Returns
     -------
     pandas.DataFrame
-        DataFrame with new flow inserted
+        DataFrame with the new flow inserted at the specified position
+        
+    Notes
+    -----
+    The function temporarily converts the DataFrame to a list of dictionaries for
+    insertion, then converts back. This ensures the new flow is placed exactly at
+    the specified position while preserving all other flows and their order.
     """
     # Convert to list for easier manipulation
     df_list = df.to_dict('records')
@@ -555,21 +704,33 @@ def validate_merge_parameters(df: pd.DataFrame,
     """
     Validate parameters for the merge_flows function.
     
+    This function performs validation checks to ensure that the merge_flows function
+    can execute successfully. It checks for the existence of the merge source and
+    validates that any specified flow names in merge logic lists actually exist.
+    
     Parameters
     ----------
     df : pandas.DataFrame
         DataFrame to validate against
     merge_source : str
-        Source to merge
+        Source value to merge (must exist in the merge_column)
     value_1_merge : str or list
-        Value 1 merge logic
+        Value 1 merge logic (will be validated if it's a list)
     value_2_merge : str or list
-        Value 2 merge logic
+        Value 2 merge logic (will be validated if it's a list)
+    merge_column : str, optional
+        Column name to use for matching flows (default: 'Source')
     
     Returns
     -------
     bool
-        True if parameters are valid
+        True if all parameters are valid, False otherwise
+        
+    Notes
+    -----
+    If merge logic parameters are lists, the function checks that all flow names
+    in those lists exist in the DataFrame for the specified merge source.
+    Warnings are printed for any validation failures.
     """
     # Check if source exists
     if merge_source not in df[merge_column].values:
@@ -594,19 +755,29 @@ def validate_finalize_parameters(df: pd.DataFrame,
     """
     Validate parameters for the finalize_df function.
     
+    This function performs validation checks to ensure that the finalize_df function
+    can execute successfully. It checks for the existence of required columns and
+    validates that the specified reference flow exists in the DataFrame.
+    
     Parameters
     ----------
     df : pandas.DataFrame
-        DataFrame to validate
+        DataFrame to validate (must contain required columns)
     reference_flow : str
-        Reference flow name
+        Name of the reference flow (must exist in the 'Flow' column)
     reference_source : str
-        Reference flow source
+        Source of the reference flow (must exist in the 'Source' column)
     
     Returns
     -------
     bool
-        True if parameters are valid
+        True if all parameters are valid, False otherwise
+        
+    Notes
+    -----
+    Required columns: ['Flow', 'Source', 'In/Out', 'Flow_Type', 'LCA Unit', 'LCA Amount']
+    The function checks that the reference flow exists with the specified source
+    before proceeding with the finalization process.
     """
     # Check if required columns exist
     required_columns = ['Flow', 'Source', 'In/Out', 'Flow_Type', 'LCA Unit', 'LCA Amount']
@@ -627,17 +798,34 @@ def validate_finalize_parameters(df: pd.DataFrame,
 
 def get_finalize_summary(df: pd.DataFrame) -> dict:
     """
-    Get a summary of the finalized DataFrame.
+    Get a comprehensive summary of the finalized LCA DataFrame.
+    
+    This function provides various statistics about the finalized DataFrame including
+    flow counts, input/output breakdowns, and flow type distributions. It's useful
+    for understanding the structure and content of the processed LCA data.
     
     Parameters
     ----------
     df : pandas.DataFrame
-        Finalized DataFrame
+        Finalized DataFrame with columns: ['Flow_Name', 'LCA_Amount', 'LCA_Unit', 
+        'Is_Input', 'Reference_Product', 'Flow_Type', 'Category', 'Context', 'UUID', 'Description']
     
     Returns
     -------
     dict
-        Summary statistics
+        Dictionary containing summary statistics with keys:
+        - total_flows: Total number of flows
+        - input_flows: Number of input flows
+        - output_flows: Number of output flows
+        - reference_products: Number of reference product flows
+        - unique_flow_types: Number of unique flow types
+        - total_lca_amount: Sum of all LCA amounts
+        - flow_type_breakdown: Dictionary of flow type counts
+        
+    Notes
+    -----
+    The summary provides both numerical counts and categorical breakdowns to help
+    understand the distribution and characteristics of the LCA flows.
     """
     summary = {
         'total_flows': len(df),
