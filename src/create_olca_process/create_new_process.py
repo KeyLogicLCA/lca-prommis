@@ -4,32 +4,27 @@
     # Develop function to create empty process                                              --> DONE (create_empty_process.py in create_new_process.py module)
     # Develop function to create exchange for reference product flow                        --> DONE (create_ref_product_exchange.py in create_new_process.py module)
     # Develop function to search for flows by keywords                                      --> DONE (search_Flows_by_keywords.py in flow_search_function.py module)
-    # Develop function to get processes associated with a specific flow                     --> DONE (find_processes_by_flow.py in flow_search_function.py module)
+    # Develop function to get processes associated with a specific flow                     --> DONE 
     # Develop function to create exchange for elementary flows                              --> DONE
-    # Develop function to create exchange for product/waste flows (given flow + process)
-    # Develop function to get flow property of the flow selected by the user
-    # Develop function to get the available units for the flow selected by the user
-    # Use function from netlolca library to create exchange for the selected flow 
-    # Create exchange for the reference product flow using netlolca library
+    # Develop code for user interface to select flow and process                            --> DONE
+    # Develop function to create exchange for product/waste flows (given flow + process)    
+    # 
 
 # Testing/debugging
     # Test (and debug if needed): create_empty_process                                      --> DONE   
     # Test (and debug if needed): create_ref_product_exchange                               --> DONE
     # Test (and debug if needed): search_Flows_by_keywords                                  --> DONE (search_Flows_by_keywords.py in flow_search_function.py module)
-    # Test (and debug if needed): find_processes_by_flow                                    --> DONE (find_processes_by_flow.py in flow_search_function.py module)
-    # Test (and debug if needed): create_exchange_elementary_flow                           --> In progress
-    # Test (and debug if needed): show_flow_process_selection_menu
-    # Test (and debug if needed): get_user_search_choice
-    # Test (and debug if needed): create_new_process
-    # Test (and debug if needed): get_flow_properties
-    # Test (and debug if needed): get_flow_units
-    # Test (and debug if needed): select_flow_property_and_unit
+    # Test (and debug if needed): find_processes_by_flow                                    --> DONE 
+    # Test (and debug if needed): create_exchange_elementary_flow                           --> DONE
+    # Test (and debug if needed): show_flow_process_selection_menu                          --> DONE
+    # Test (and debug if needed): user interface to select flow and process                 --> In Progress
+
 
 # Other
-    # check if openlca has a limit on the number of characters for the name                 TODO 2
-    # check if openlca has a limit on the number of characters for the description          TODO 3
-    # for elementary flows - Daniel will add uuids for each flow (FEDEFL)                   --> DONE
-    # create openLCA database with all the available processes/providers                    TODO 1   
+    # check if openlca has a limit on the number of characters for the name                 TODO 2  --> DONE
+    # check if openlca has a limit on the number of characters for the description          TODO 3  --> DONE
+    # for elementary flows - Daniel will add uuids for each flow (FEDEFL)                           --> DONE
+    # create openLCA database with all the available processes/providers                    TODO 1  --> DONE 
 
 # TODO - 4 for Daniel - TODO Notes
 # write a script to:
