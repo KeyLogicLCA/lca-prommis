@@ -271,12 +271,7 @@ def get_lca_df(m):
     
     # Water
     try:
-        # HOTFIX: The model never sets water concentration. Manually set it to 1000 mg/L.
-        # https://github.com/prommis/prommis/issues/168
         h2o_conc = safe_value(m.fs.leach_liquid_feed.conc_mass_comp[0, "H2O"])
-        if h2o_conc < 1e-7:
-            h2o_conc = 1e6
-        
         flow.append("Water")
         source.append("Liquid Feed")
         in_out.append("In")
@@ -311,9 +306,8 @@ def get_lca_df(m):
     rougher_org_vol = safe_value(m.fs.rougher_org_make_up.flow_vol[0])
     
     # Kerosene
-    kerosene_conc = safe_value(m.fs.rougher_org_make_up.conc_mass_comp[0, "Kerosene"])
-    
     try:
+        kerosene_conc = safe_value(m.fs.rougher_org_make_up.conc_mass_comp[0, "Kerosene"])
         flow.append("Kerosene")
         source.append("Rougher Organic Make-up")
         in_out.append("In")
@@ -322,18 +316,12 @@ def get_lca_df(m):
         unit_1.append("L/hr")
         value_2.append(kerosene_conc)
         unit_2.append("mg/L")
-    except Exception:
+    except Exception:   
         print(f"Error: could not process rougher organic make-up kerosene")
     
-    # DEHPA
-    # HOTFIX: DEHPA concentration in the new version does not load properly. This is the correct value.
-    # https://github.com/prommis/prommis/issues/169
-    dehpa_conc = safe_value(m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"])
-    if dehpa_conc > 100e3:
-        dosage = 5
-        dehpa_conc = 975.8e3 * (dosage / 100)
-    
+    # DEHPA    
     try:
+        dehpa_conc = safe_value(m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"])
         flow.append("DEHPA")
         source.append("Rougher Organic Make-up")
         in_out.append("In")
@@ -351,9 +339,8 @@ def get_lca_df(m):
     cleaner_org_vol = safe_value(m.fs.cleaner_org_make_up.flow_vol[0])
     
     # Kerosene
-    kerosene_conc = safe_value(m.fs.cleaner_org_make_up.conc_mass_comp[0, "Kerosene"])
-    
     try:
+        kerosene_conc = safe_value(m.fs.cleaner_org_make_up.conc_mass_comp[0, "Kerosene"])
         flow.append("Kerosene")
         source.append("Cleaner Organic Make-up")
         in_out.append("In")
@@ -366,14 +353,8 @@ def get_lca_df(m):
         print(f"Error: could not process cleaner organic make-up kerosene")
     
     # DEHPA
-    # HOTFIX: DEHPA concentration in the new version does not load properly. This is the correct value.
-    # https://github.com/prommis/prommis/issues/169
-    dehpa_conc = safe_value(m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"])
-    if dehpa_conc > 100e3:
-        dosage = 5
-        dehpa_conc = 975.8e3 * (dosage / 100)
-    
     try:
+        dehpa_conc = safe_value(m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"])
         flow.append("DEHPA")
         source.append("Cleaner Organic Make-up")
         in_out.append("In")
