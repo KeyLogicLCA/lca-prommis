@@ -27,8 +27,85 @@ unit_display_mapping = {
     'kBq': 'kBq'
 }
 
+"""
+PrOMMiS LCA Unit Conversion Module
+
+This module converts PrOMMiS flowsheet data from various units to LCA-relevant units
+for Life Cycle Assessment analysis. It handles complex unit conversions, mass/mole
+fractions, and provides automatic molecular weight lookups for chemical compounds.
+
+Key Features:
+- Converts flow rates to total amounts over specified time periods
+- Handles mass and mole fractions to calculate actual component amounts
+- Automatically determines appropriate LCA units based on flow categories
+- Provides molecular weight lookups via PubChem API for molar conversions
+- Supports various input unit formats and special cases
+- Maps output units to standardized LCA display formats
+
+Main Functions:
+- main(): Executes the complete conversion workflow and saves results
+- convert_flows_to_lca_units(): Core conversion function with comprehensive unit handling
+- get_molar_mass(): Retrieves molecular weights from PubChem database
+- parse_unit_to_pyomo(): Converts unit strings to Pyomo unit expressions
+- get_unit(): Resolves individual unit strings to Pyomo units
+
+Unit Categories:
+- Mass flows: Converted to kg (default LCA unit)
+- Volume flows: Converted to L (or m3 for water)
+- Energy flows: Electricity to kWh, heat to MJ
+- Molar flows: Converted to kg using molecular weights
+- Radioactivity: Converted to kBq
+
+Usage:
+    from prommis_LCA_conversions import main
+    
+    # Convert flows to LCA units with default settings
+    df = main()
+    
+    # Customize conversion parameters
+    df = convert_flows_to_lca_units(
+        df, 
+        hours=24,           # Convert to 24-hour period
+        mol_to_kg=True,     # Convert moles to kg
+        water_unit='m3'     # Use cubic meters for water
+    )
+
+Dependencies:
+- pandas: Data manipulation and CSV handling
+- pyomo.environ: Unit system and conversion capabilities
+- pubchempy: Chemical compound lookups (optional)
+- pymatgen: Molecular weight calculations (optional)
+
+Notes:
+- Requires internet connection for PubChem molecular weight lookups
+- Handles special cases like embedded values in unit strings
+- Provides comprehensive error handling for conversion failures
+- Automatically maps output units to standardized display formats
+"""
+
 
 def main():
+    """
+    Execute the complete LCA unit conversion workflow.
+    
+    This function reads the raw LCA DataFrame, converts all flows to LCA-relevant units,
+    and saves the results to a new CSV file. It serves as the main entry point
+    for the unit conversion process.
+    
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with all flows converted to LCA units, including new columns:
+        - 'LCA Amount': Converted amounts in appropriate LCA units
+        - 'LCA Unit': Corresponding units (kg, L, kWh, MJ, mol, etc.)
+        
+    Notes
+    -----
+    - Automatically reads from 'lca_df.csv' in the current directory
+    - Saves results to 'lca_df_converted.csv' in the current directory
+    - Uses default conversion parameters (1 hour period, moles to kg, water in m3)
+    - Handles all unit conversions automatically based on flow categories
+    """
     df = pd.read_csv('lca_df.csv')
     df = convert_flows_to_lca_units(df)
     df.to_csv('lca_df_converted.csv', index=False)
@@ -62,7 +139,7 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
         Whether to convert molar amounts to mass using molecular weights (default: True).
         Requires internet connection for PubChem lookups.
     water_unit : string, optional
-        What unit to use for water flows. Can be m3, L, or kg (default: m3).
+        What unit to use for water flows. Can be 'm3', 'L', or 'kg' (default: 'm3').
     
     Returns
     -------
@@ -74,29 +151,51 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
     Notes
     -----
     - Converts mass fractions and mole fractions to actual amounts
-    - Automatically determines target units based on flow category
+    - Automatically determines target units based on flow category:
+        * Water/wastewater: kg (if concentration given), L (if volume), or specified unit
+        * Electricity: kWh
+        * Heat: MJ
+        * Molar flows: kg (if mol_to_kg=True) or mol
+        * Radioactivity: kBq
+        * All others: kg
     - Uses PubChem API for molecular weight lookups when mol_to_kg=True
-    - Provides error handling for conversion failures
+    - Provides comprehensive error handling for conversion failures
     - If using mass/mole fractions, the first value should be the total stream amount, 
-      and the second value should be the composition of the individual flow.
+      and the second value should be the composition of the individual flow
+    - Handles special cases like embedded values in unit strings (e.g., "5*mg/L")
     
     Examples
     --------
     >>> df = pd.read_csv('lca_df.csv')
-    >>> converted_df = convert_flows_to_lca_units(df, hours=24)
+    >>> # Convert to 24-hour period with moles converted to kg
+    >>> converted_df = convert_flows_to_lca_units(df, hours=24, mol_to_kg=True)
     >>> print(converted_df[['Flow', 'LCA Amount', 'LCA Unit']])
+    
+    >>> # Customize water units and disable molar conversions
+    >>> converted_df = convert_flows_to_lca_units(
+    ...     df, hours=1, mol_to_kg=False, water_unit='L'
+    ... )
+    
+    Raises
+    ------
+    Various conversion errors may occur and are handled gracefully:
+    - Unit parsing errors: Logged and row skipped
+    - Conversion failures: Logged with fallback to 0
+    - Molecular weight lookup failures: Falls back to mol units
     """
 
     # Prepare output columns
     lca_amounts = []
     lca_units = []
 
-    # Loop through each row
+    # Main processing loop: Convert each flow to LCA-relevant units
+    # This loop handles unit parsing, value conversion, and category-based unit selection
     for idx, row in df.iterrows():
         unit1 = str(row['Unit 1']).strip()
         unit2 = str(row['Unit 2']).strip()
         
-        # Convert values to appropriate types, handling empty strings and special cases
+        # Parse and validate input values, handling special cases and data types
+        # This section ensures robust handling of various input formats and edge cases
         try:
             value1 = float(row['Value 1']) if pd.notna(row['Value 1']) else 0.0
         except (ValueError, TypeError):
@@ -116,7 +215,8 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
         except (ValueError, TypeError):
             value2 = None
         
-        # Create the base expression with Value 1 and Unit 1
+        # Parse units and create Pyomo unit expressions for mathematical operations
+        # This enables unit-aware calculations and conversions
         pyomo_unit1 = parse_unit_to_pyomo(unit1)
         if pyomo_unit1 is None:
             # If no valid unit, skip this row or use a default
@@ -127,7 +227,8 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
         # Start with Value 1 * Unit 1
         expression = value1 * pyomo_unit1
         
-        # Handle mass fraction and mole fraction
+        # Handle mass and mole fractions to calculate actual component amounts
+        # This section converts composition data to absolute quantities
         if value2 is not None and unit2:
             if unit2.lower() == 'mass fraction':
                 # For mass fraction, multiply by the fraction to get actual mass
@@ -143,10 +244,12 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
                 else:
                     print(f'Could not parse {unit2}')
         
-        # Multiply by hours to get total amount
+        # Convert flow rates to total amounts over the specified time period
+        # This is essential for LCA analysis which requires total inputs/outputs
         expression = expression * hours * units.hr
         
         # Determine target unit based on category and unit types
+        # This ensures consistent LCA units across different flow categories
         category = str(row['Category']).lower()
         
         # Water and wastewater should be kg if a concentration is given
@@ -172,10 +275,13 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
         else:
             target_unit = units.kg
         
-        # Convert to target unit
+        # Perform the actual unit conversion using Pyomo's conversion system
+        # This section handles the mathematical conversion and special cases
         try:
             converted_expression = units.convert(expression, to_units=target_unit)
             
+            # Handle water flows with flexible unit specification
+            # Water can be converted to m3, L, or kg based on user preference
             if 'water' in category and not 'wastewater' in category:
                 val = value(converted_expression)
                 
@@ -197,7 +303,8 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
                 val = value(converted_expression)
                 new_unit = 'kg'
             
-            # If the target unit is mol and mol_to_kg is True, convert to kg
+            # Convert molar flows to mass using molecular weights from PubChem
+            # This enables consistent mass-based LCA analysis
             elif 'mol' in unit1.lower() and mol_to_kg:
                 molar_mass = get_molar_mass(row['Flow'])
                 if molar_mass is not None:
@@ -214,6 +321,8 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
                 val = value(converted_expression)
                 new_unit = str(target_unit)
             
+            # Map output units to standardized display names for consistency
+            # This ensures uniform unit representation across the LCA dataset
             new_unit = unit_display_mapping.get(new_unit, new_unit)
             
         except Exception as e:
@@ -234,22 +343,46 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
 # Helper function to get the molar mass of a compound
 def get_molar_mass(compound_name):
     """
-    Returns the molar mass of a compound using PubChem API.
+    Retrieve the molar mass of a compound using PubChem API.
+    
+    This function searches the PubChem database for chemical compounds and calculates
+    their molecular weights using the molecular formula. It provides automatic
+    molecular weight lookups for converting molar flows to mass flows in LCA analysis.
     
     Parameters
     ----------
     compound_name : str
-        Name of the compound to look up
+        Name of the compound to look up (e.g., 'Carbon dioxide', 'Sulfuric acid')
         
     Returns
     -------
-    float
-        Molar mass in g/mol
+    float or None
+        Molar mass in g/mol if found, None if compound not found or lookup fails
         
     Notes
     -----
-    Requires internet connection for PubChem API access.
-    Returns None if compound not found or lookup fails.
+    - Requires internet connection for PubChem API access
+    - Returns None if pubchempy/pymatgen packages are not available
+    - Uses the first compound found if multiple matches exist
+    - Calculates molecular weight from molecular formula using pymatgen
+    - Provides comprehensive error handling and warning messages
+    
+    Examples
+    --------
+    >>> molar_mass = get_molar_mass('Carbon dioxide')
+    >>> print(f"CO2 molar mass: {molar_mass} g/mol")
+    >>> # Output: CO2 molar mass: 44.01 g/mol
+    
+    >>> molar_mass = get_molar_mass('Sulfuric acid')
+    >>> print(f"H2SO4 molar mass: {molar_mass} g/mol")
+    >>> # Output: H2SO4 molar mass: 98.08 g/mol
+    
+    Raises
+    ------
+    Various exceptions may occur during API calls and are handled gracefully:
+    - Connection errors: Logged and None returned
+    - Compound not found: Warning printed and None returned
+    - Formula parsing errors: Warning printed and None returned
     """
     if not PYCHEMPY_AVAILABLE:
         print(f"Warning: Cannot get molar mass for '{compound_name}' - pubchempy/pymatgen not available")
@@ -278,26 +411,55 @@ def parse_unit_to_pyomo(unit_str):
     """
     Convert unit string to Pyomo unit expression.
     
+    This function parses unit strings and converts them to Pyomo unit expressions
+    that can be used for unit conversions and calculations. It handles complex
+    unit combinations including multiplication, division, and exponents.
+    
     Parameters
     ----------
     unit_str : str
-        Unit string to parse (e.g., 'kg/hr', 'mg/L', 'hp')
+        Unit string to parse (e.g., 'kg/hr', 'mg/L', 'hp', 'kW*hr')
         
     Returns
     -------
     pyomo.environ.units.Unit or None
-        Pyomo unit expression if successfully parsed, None otherwise
+        Pyomo unit expression if successfully parsed, None for mass/mole fractions
+        or empty strings
         
     Notes
     -----
-    Returns None for mass/mole fractions and empty strings.
-    This function does not recognize parentheses in the unit string. 
-    All multiplication should use the '*' symbol.
-    All division should use the '/' symbol.
-    All exponents should use the '**' or '^' symbol.
-    These are the only symbols allowed in the unit string.
-    This function may not handle units not recognized by Pyomo.
-    For a mass/mole fraction, the unit should be one of the following: mass fraction, mole fraction, mol fraction, mass frac, mole frac, mol frac
+    - Returns None for mass/mole fractions and empty strings
+    - Recognizes these fraction keywords: 'mass fraction', 'mole fraction', 'mol fraction',
+      'mass frac', 'mole frac', 'mol frac'
+    - Handles multiplication using '*' symbol
+    - Handles division using '/' symbol  
+    - Handles exponents using '**' or '^' symbols
+    - Does not recognize parentheses in unit strings
+    - May not handle units not recognized by Pyomo
+    
+    Examples
+    --------
+    >>> parse_unit_to_pyomo('kg/hr')
+    <pyomo unit: kg/hr>
+    
+    >>> parse_unit_to_pyomo('mg/L')
+    <pyomo unit: mg/L>
+    
+    >>> parse_unit_to_pyomo('kW*hr')
+    <pyomo unit: kW*hr>
+    
+    >>> parse_unit_to_pyomo('mass fraction')
+    None
+    
+    >>> parse_unit_to_pyomo('')
+    None
+    
+    Limitations
+    -----------
+    - No support for parentheses in unit strings
+    - Limited to units recognized by Pyomo
+    - Complex unit expressions may fail to parse
+    - Error handling provides fallback to default values
     """
     if not unit_str or unit_str == '' or unit_str.lower() in ['mass fraction', 'mole fraction', 'mol fraction', 'mass frac', 'mole frac', 'mol frac']:
         return None
@@ -338,6 +500,56 @@ def parse_unit_to_pyomo(unit_str):
 
 # Helper function to obtain the Pyomo unit for a string
 def get_unit(string, default=None):
+    """
+    Resolve individual unit strings to Pyomo unit objects.
+    
+    This function attempts to convert unit strings to Pyomo unit objects by trying
+    various parsing strategies. It handles different unit formats including those
+    with exponents and provides fallback options for unrecognized units.
+    
+    Parameters
+    ----------
+    string : str
+        Unit string to resolve (e.g., 'kg', 'hr', 'kW', 'm3')
+    default : any, optional
+        Default value to return if unit resolution fails (default: None)
+        
+    Returns
+    -------
+    pyomo.environ.units.Unit or any
+        Pyomo unit object if successfully resolved, default value if resolution fails
+        
+    Notes
+    -----
+    - First attempts direct attribute lookup from Pyomo units
+    - Handles exponent notation by converting '^' to '**'
+    - Automatically adds '**' for numeric exponents (e.g., 'm3' becomes 'm**3')
+    - Falls back to lowercase unit names if initial lookup fails
+    - Provides comprehensive error messages for debugging
+    - Returns default value for any resolution failures
+    
+    Examples
+    --------
+    >>> get_unit('kg')
+    <pyomo unit: kg>
+    
+    >>> get_unit('m3')
+    <pyomo unit: m**3>
+    
+    >>> get_unit('kW')
+    <pyomo unit: kW>
+    
+    >>> get_unit('unknown_unit', default='kg')
+    'kg'
+    
+    Error Handling
+    --------------
+    - Unrecognized units: Error message printed, default returned
+    - Malformed unit strings: Error message printed, default returned
+    - Missing Pyomo units: Error message printed, default returned
+    
+    The function prints detailed error messages to help identify unit parsing issues.
+    """
     unit_str = string.strip()
     try:
         unit_str = unit_str.replace('^', '**')
@@ -359,6 +571,53 @@ def get_unit(string, default=None):
         print(f'Ignoring this unit and returning {default}.')
         print('Make sure you check that the unit string is correct, including capitalization and exponents, and that there are no parentheses.')
         return default
+
+
+"""
+Main Workflow and Important Considerations
+
+This module performs the following key operations:
+
+1. Unit Parsing and Conversion:
+   - Parses complex unit strings (e.g., 'kg/hr', 'mg/L', 'kW*hr')
+   - Converts to Pyomo unit expressions for mathematical operations
+   - Handles special cases like mass/mole fractions and embedded values
+
+2. Flow Rate to Total Amount Conversion:
+   - Multiplies all flows by the specified time period (hours)
+   - Converts from per-hour rates to total amounts over the period
+   - Essential for LCA analysis which requires total material/energy inputs
+
+3. Category-Based Unit Standardization:
+   - Water flows: Converted to specified units (m3, L, or kg)
+   - Energy flows: Electricity to kWh, heat to MJ
+   - Mass flows: Standardized to kg (default LCA unit)
+   - Molar flows: Converted to kg using molecular weights
+
+4. Special Case Handling:
+   - Mass/mole fractions: Multiplied to get actual component amounts
+   - Embedded values: Extracts numeric values from strings like "5*mg/L"
+   - Error handling: Graceful fallbacks for conversion failures
+
+Key Features:
+- Automatic molecular weight lookups via PubChem API
+- Comprehensive unit mapping and standardization
+- Robust error handling with informative messages
+- Flexible water unit specification
+- Support for various input unit formats
+
+Usage Notes:
+- Ensure internet connection for molecular weight lookups
+- Check unit string formats for compatibility
+- Monitor error messages for conversion issues
+- Verify output units match LCA software requirements
+
+For troubleshooting unit conversion issues, check:
+- Unit string format and spelling
+- Pyomo unit availability
+- Internet connectivity for PubChem lookups
+- Input data quality and completeness
+"""
 
 
 if __name__ == "__main__":

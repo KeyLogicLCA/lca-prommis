@@ -10,7 +10,59 @@ from pyomo.environ import (
 from warnings import warn
 import prommis.uky.uky_flowsheet as uky
 
+"""
+PrOMMiS LCA Data Extraction Module
+
+This module extracts Life Cycle Assessment (LCA) relevant data from the PrOMMiS UKy flowsheet
+model. It processes the Pyomo model results to create a comprehensive DataFrame containing
+all material flows, energy inputs, and waste outputs needed for LCA analysis.
+
+Key Features:
+- Extracts solid feed components including REE oxides and impurities
+- Processes liquid feed streams (water, acids, organic chemicals)
+- Captures energy inputs (electricity, heat) from various unit operations
+- Identifies product streams (REE oxides) and waste streams
+- Calculates mass balances and recovery rates
+
+Main Functions:
+- main(): Executes the complete workflow and saves results to CSV
+- get_lca_df(): Extracts and organizes LCA data from the Pyomo model
+
+Data Sources:
+- Sodium Hydroxide: NETL UP library acid leaching unit process
+- Oxalic Acid: NETL UP library REE oxide formation unit process
+
+Usage:
+    from prommis_LCA_data import main
+    
+    # Extract LCA data and save to CSV
+    df = main()
+    
+    # Access the DataFrame directly
+    print(df.head())
+
+Dependencies:
+- pandas: Data manipulation and CSV export
+- pyomo.environ: Access to model variables and units
+- prommis.uky.uky_flowsheet: UKy flowsheet model
+- warnings: Warning system for model issues
+"""
+
+
 def main():
+    """
+    Execute the complete LCA data extraction workflow from the PrOMMiS UKy flowsheet.
+    
+    This function runs the UKy flowsheet model, extracts all LCA-relevant data,
+    and saves the results to a CSV file. It serves as the main entry point
+    for the LCA data extraction process.
+    
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame containing all extracted LCA flows with columns:
+        ['Flow', 'Source', 'In/Out', 'Category', 'Value 1', 'Unit 1', 'Value 2', 'Unit 2']
+    """
     m, results = uky.main()
     df = get_lca_df(m)
     df.to_csv("lca_df.csv")
@@ -19,13 +71,57 @@ def main():
 
 def get_lca_df(m):
     """
-    Create a pandas DataFrame with LCA-relevant flows organized for analysis.
+    Extract and organize LCA-relevant data from the PrOMMiS Pyomo model.
     
-    Args:
-        m: pyomo model
+    This function processes the solved Pyomo model to extract all material flows,
+    energy inputs, and waste outputs needed for Life Cycle Assessment. It handles
+    multiple data categories including solid feeds, liquid feeds, chemicals,
+    energy streams, products, and waste streams.
+    
+    Parameters
+    ----------
+    m : pyomo.environ.ConcreteModel
+        Solved Pyomo model containing the UKy flowsheet results
         
-    Returns:
-        pandas.DataFrame: DataFrame with LCA flows and their properties
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with LCA flows organized by the following categories:
+        
+        Solid Inputs:
+        - REE oxides (Y2O3, La2O3, Ce2O3, Pr2O3, Nd2O3, Sm2O3, Gd2O3, Dy2O3)
+        - Impurities (Al2O3, Fe2O3, CaO, Sc2O3, Inerts)
+        
+        Liquid Inputs:
+        - Water from various feed streams
+        - Sulfuric acid (H2SO4) from leach liquid feed
+        - Hydrochloric acid (HCl) from acid feeds 1-3
+        - Organic chemicals (Kerosene, DEHPA) from rougher/cleaner make-up
+        
+        Energy Inputs:
+        - Electricity from mixers (leach, rougher, cleaner, precipitator)
+        - Heat from roaster and solution heater
+        
+        Chemicals (Proxy Data):
+        - Sodium hydroxide (calculated from sulfuric acid ratio)
+        - Oxalic acid (calculated from sulfuric acid ratio)
+        
+        Products:
+        - REE oxides from roaster product
+        
+        Waste Streams:
+        - Gas emissions (O2, H2O, CO2, N2) from roaster
+        - Solid waste (filter cake, dust and volatiles)
+        - Liquid waste (various purge streams and filtrates)
+        
+        Columns: ['Flow', 'Source', 'In/Out', 'Category', 'Value 1', 'Unit 1', 'Value 2', 'Unit 2']
+        
+    Notes
+    -----
+    - Calculates mass balances and recovery rates for REEs
+    - Uses proxy data for sodium hydroxide and oxalic acid based on NETL UP library
+    - Processes both direct model outputs and calculated derived values
+    - Includes comprehensive error handling for missing or invalid model variables
     """
     # Initialize empty lists to store data
     flow = []
@@ -39,6 +135,31 @@ def get_lca_df(m):
     
     # Helper function to safely get values
     def safe_value(var, default=0):
+        """
+        Safely extract values from Pyomo variables with error handling.
+        
+        This helper function attempts to extract values from Pyomo model variables
+        while providing graceful error handling for invalid or missing variables.
+        It also checks for zero values which may indicate model issues.
+        
+        Parameters
+        ----------
+        var : pyomo.core.base.var.SimpleVar or similar
+            Pyomo variable to extract value from
+        default : float, optional
+            Default value to return if extraction fails (default: 0)
+            
+        Returns
+        -------
+        float
+            Extracted value from the variable, or default if extraction fails
+            
+        Notes
+        -----
+        - Prints error messages for debugging when variables are invalid
+        - Warns about zero values which may indicate model convergence issues
+        - Returns the default value for any exceptions during value extraction
+        """
         try:
             if value(var) == 0:
                 print(f"Error: {var} is 0")
@@ -47,6 +168,8 @@ def get_lca_df(m):
             print(f"Error: {var} is not a valid variable")
             return default
     
+    # Define component lists for processing
+    # Solid components include REE oxides and impurities found in the feed
     solid_components = [
         ("Inerts", "inerts"),
         ("Scandium Oxide", "Sc2O3"),
@@ -94,6 +217,9 @@ def get_lca_df(m):
         "Gadolinium",
         "Dysprosium"
     ]
+    
+    # Molar masses for converting between elemental and oxide forms
+    # Used for calculating mass flows and fractions in product streams
     molar_mass = {
         "Al2O3": (26.98 * 2 + 16 * 3) * units.g / units.mol,
         "Fe2O3": (55.845 * 2 + 16 * 3) * units.g / units.mol,
@@ -108,7 +234,10 @@ def get_lca_df(m):
         "Gd2O3": (157.25 * 2 + 16 * 3) * units.g / units.mol,
         "Dy2O3": (162.5 * 2 + 16 * 3) * units.g / units.mol,
     }
-    # 1. Solid Feed components
+    
+    # 1. Process Solid Feed Components
+    # Extract mass fractions and flows for all solid components entering the system
+    # This includes REE oxides and impurities that will be processed through leaching
     solid_feed_mass = value(units.convert(m.fs.leach_solid_feed.flow_mass[0], to_units=units.kg / units.hr))
     
     # To print the mass of the REEs coming in to calculate recovery
@@ -135,7 +264,9 @@ def get_lca_df(m):
     
     print(f"REE mass in: {reo_mass_in} kg/hr")
     
-    # 2. Liquid Feed components
+    # 2. Process Liquid Feed Components
+    # Extract water and acid concentrations from the leach liquid feed stream
+    # This stream provides the aqueous medium for the leaching process
     liquid_feed_vol = safe_value(m.fs.leach_liquid_feed.flow_vol[0])
     
     # Water
@@ -174,16 +305,13 @@ def get_lca_df(m):
     except Exception:
         print(f"Error: could not process liquid feed sulfuric acid")
     
-    # 3. Rougher Organic Make-up
+    # 3. Process Rougher Organic Make-up
+    # Extract organic solvent and extractant flows for the rougher flotation circuit
+    # These chemicals are essential for REE separation and concentration
     rougher_org_vol = safe_value(m.fs.rougher_org_make_up.flow_vol[0])
     
     # Kerosene
-    # HOTFIX: Kerosene concentration in the new version does not load properly. This is the correct value.
-    # https://github.com/prommis/prommis/issues/169
-    try:
-        kerosene_conc = safe_value(m.fs.rougher_org_make_up.conc_mass_comp[0, "Kerosene"])
-    except Exception:
-        kerosene_conc = 8.2e5
+    kerosene_conc = safe_value(m.fs.rougher_org_make_up.conc_mass_comp[0, "Kerosene"])
     
     try:
         flow.append("Kerosene")
@@ -200,9 +328,8 @@ def get_lca_df(m):
     # DEHPA
     # HOTFIX: DEHPA concentration in the new version does not load properly. This is the correct value.
     # https://github.com/prommis/prommis/issues/169
-    try:
-        dehpa_conc = safe_value(m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"])
-    except Exception:
+    dehpa_conc = safe_value(m.fs.rougher_org_make_up.conc_mass_comp[0, "DEHPA"])
+    if dehpa_conc > 100e3:
         dosage = 5
         dehpa_conc = 975.8e3 * (dosage / 100)
     
@@ -218,16 +345,13 @@ def get_lca_df(m):
     except Exception:
         print(f"Error: could not process rougher organic make-up DEHPA")
     
-    # 4. Cleaner Organic Make-up
+    # 4. Process Cleaner Organic Make-up
+    # Extract organic solvent and extractant flows for the cleaner flotation circuit
+    # This provides additional purification of the REE concentrate
     cleaner_org_vol = safe_value(m.fs.cleaner_org_make_up.flow_vol[0])
     
     # Kerosene
-    # HOTFIX: Kerosene concentration in the new version does not load properly. This is the correct value.
-    # https://github.com/prommis/prommis/issues/169
-    try:
-        kerosene_conc = safe_value(m.fs.cleaner_org_make_up.conc_mass_comp[0, "Kerosene"])
-    except Exception:
-        kerosene_conc = 8.2e5
+    kerosene_conc = safe_value(m.fs.cleaner_org_make_up.conc_mass_comp[0, "Kerosene"])
     
     try:
         flow.append("Kerosene")
@@ -244,9 +368,8 @@ def get_lca_df(m):
     # DEHPA
     # HOTFIX: DEHPA concentration in the new version does not load properly. This is the correct value.
     # https://github.com/prommis/prommis/issues/169
-    try:
-        dehpa_conc = safe_value(m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"])
-    except Exception:
+    dehpa_conc = safe_value(m.fs.cleaner_org_make_up.conc_mass_comp[0, "DEHPA"])
+    if dehpa_conc > 100e3:
         dosage = 5
         dehpa_conc = 975.8e3 * (dosage / 100)
     
@@ -262,7 +385,9 @@ def get_lca_df(m):
     except Exception:
         print(f"Error: could not process cleaner organic make-up DEHPA")
     
-    # 5. Acid Feed 1
+    # 5. Process Acid Feed 1
+    # Extract hydrochloric acid feed for the first acid addition stage
+    # This acid is used for pH control and metal dissolution
     acid1_vol = safe_value(m.fs.acid_feed1.flow_vol[0])
     
     # Water
@@ -296,7 +421,9 @@ def get_lca_df(m):
     except Exception:
         print(f"Error: could not process acid feed 1 hydrochloric acid")
     
-    # 6. Acid Feed 2
+    # 6. Process Acid Feed 2
+    # Extract hydrochloric acid feed for the second acid addition stage
+    # Additional acid may be needed for complete metal dissolution
     acid2_vol = safe_value(m.fs.acid_feed2.flow_vol[0])
     
     # Water
@@ -330,7 +457,9 @@ def get_lca_df(m):
     except Exception:
         print(f"Error: could not process acid feed 2 hydrochloric acid")
     
-    # 7. Acid Feed 3
+    # 7. Process Acid Feed 3
+    # Extract hydrochloric acid feed for the third acid addition stage
+    # Final acid addition for pH adjustment and process optimization
     acid3_vol = safe_value(m.fs.acid_feed3.flow_vol[0])
     
     # Water
@@ -364,9 +493,10 @@ def get_lca_df(m):
     except Exception:
         print(f"Error: could not process acid feed 3 hydrochloric acid")
         
-    # 8. Sodium Hydroxide
-    # Proxy based on NETL UP library acid leaching UP.
-    # Calculated using ratio to sulfuric acid.
+    # 8. Process Sodium Hydroxide (Proxy Data)
+    # Estimate sodium hydroxide consumption based on NETL UP library ratios
+    # This chemical is used for pH adjustment during the leaching process
+    # Source: NETL UP library acid leaching unit process
     try:
         total_sulfuric = total_sulfuric_conc * safe_value(m.fs.leach_liquid_feed.flow_vol[0]) * units.mg/units.hr
         naoh_in = value(units.convert(total_sulfuric * 0.478/1.17, 
@@ -382,11 +512,11 @@ def get_lca_df(m):
     except Exception:
         print(f"Error: could not process acid leaching sodium hydroxide")
     
-    # 9. Oxalic Acid
-    # Proxy based on NETL UP library REO formation UP.
-    # Calculated using ratio to sulfuric acid. 
-    # Combined the REO formation and acid leaching product system to obtain this ratio.
-    # TODO: put this into EDX (also, clean up the spreadsheet so it is presentable)
+    # 9. Process Oxalic Acid (Proxy Data)
+    # Estimate oxalic acid consumption based on NETL UP library ratios
+    # This chemical is used for REE precipitation and oxide formation
+    # Source: NETL UP library REE oxide formation unit process
+    # TODO: Move this calculation to EDX and clean up the spreadsheet
     # https://mykeylogic.sharepoint.com/:x:/r/sites/KL_PRJ_LCA-2300.203.014REEPreliminaryAssessment/_layouts/15/Doc.aspx?sourcedoc=%7BAD82A6A7-95D8-4408-B4E9-3ADB9E7024C8%7D&file=NETL%20UP%20Library%20Case%20Study%20Inventory.xlsx&action=default&mobileredirect=true
     # See cells O3:P5
     try:
@@ -403,7 +533,9 @@ def get_lca_df(m):
     except Exception:
         print(f"Error: could not process precipitation oxalic acid")
     
-    # 10. Electricity streams
+    # 10. Process Electricity Consumption
+    # Extract electrical power requirements from various mixing operations
+    # These represent the mechanical energy inputs for process agitation
     electricity_sources = [
         ("Leach Mixer", getattr(m.fs.leach_mixer, 'power', None)),
         ("Rougher Mixer", getattr(m.fs.rougher_mixer, 'power', None)),
@@ -426,7 +558,9 @@ def get_lca_df(m):
             except Exception:
                 print(f"Error: could not process {source_name} electricity")
     
-    # 11. Heat streams
+    # 11. Process Heat Consumption
+    # Extract heat duty requirements from thermal operations
+    # These represent the thermal energy inputs for roasting and solution heating
     heat_sources = [
         ("Roaster", getattr(m.fs.roaster, 'heat_duty', None)),
         ("Solution Heater", getattr(m.fs, 'leach_solution_heater', None))
@@ -451,7 +585,9 @@ def get_lca_df(m):
             except Exception:
                 print(f"Error: could not process {source_name} heat")
     
-    # 12. REE Product components
+    # 12. Process REE Product Components
+    # Extract mass flows and fractions for the final REE oxide products
+    # These represent the valuable outputs from the separation and purification process
     try:
         product_mass = value(units.convert(m.fs.roaster.flow_mass_product[0], to_units=units.kg / units.hr))
         
@@ -483,7 +619,9 @@ def get_lca_df(m):
     
     print(f'REE mass out: {reo_mass_out} kg/hr')
     
-    # 13. Gas Emissions
+    # 13. Process Gas Emissions from Roaster
+    # Extract gas composition and flow rates from the roaster emissions
+    # These emissions include process gases and combustion products
     gas_components = [
         ("Oxygen", "O2"),
         ("Water", "H2O"),
@@ -507,7 +645,9 @@ def get_lca_df(m):
         except Exception:
             print(f"Error: could not process roaster emissions {flow_name}")
     
-    # 14. Solid Waste
+    # 14. Process Solid Waste Streams
+    # Extract solid waste flows including filter cake and dust/volatiles
+    # These represent the non-recoverable solid materials from the process
     solid_waste_streams = [
         ("Filter Cake", getattr(m.fs, 'leach_filter_cake', None)),
         ("Dust and Volatiles", getattr(m.fs, 'dust_and_volatiles', None))
@@ -534,7 +674,9 @@ def get_lca_df(m):
             except Exception:
                 print(f"Error: could not process {waste_name}")
     
-    # 15. Liquid Waste
+    # 15. Process Liquid Waste Streams
+    # Extract various liquid waste flows including purge streams and filtrates
+    # These represent aqueous waste streams that require treatment or disposal
     liquid_waste_streams = [
         ("Precipitate Purge", getattr(m.fs, 'precip_purge', None)),
         ("Load Separator Purge", getattr(m.fs.load_sep, 'purge', None)),
@@ -560,7 +702,8 @@ def get_lca_df(m):
             except Exception:
                 print(f"Error: could not process {waste_name}")
     
-    # Create DataFrame
+    # Create the final DataFrame with all extracted LCA data
+    # This DataFrame contains all material flows, energy inputs, and waste outputs
     df = pd.DataFrame({
         'Flow': flow,
         'Source': source,
