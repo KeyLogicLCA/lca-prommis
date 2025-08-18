@@ -61,6 +61,7 @@ import re
 import uuid
 import datetime
 from typing import List, Optional, Tuple, Union
+from search_flows import search_and_select
 
 
 logger = logging.getLogger(__name__)
@@ -98,23 +99,64 @@ def create_new_process(client, df, process_name, process_description):
     process = create_empty_process(client, name, description)
     # TODO: use function from netlolca to create a new process
 
-    # 4. Create exchange for reference product first
+    # 4. Create exchanges
     exchanges = []
 
     # Loop through the dataframe, find reference product, and create exchange for it
-    
     for index, row in df.iterrows():
-    #TODO: modify function to read flow type - if flow type is elementary, then skip
-        product = row['Flow_Name']
-        if row['Reference_Product'] == True:
-            exchange = create_ref_product_exchange(client, product, row['LCA_Amount'], row['LCA_Unit'], row['Is_Input'], row['Reference_Product'])
-            exchanges.append(exchange)
-        else:
-            # TODO: Handle non-reference product flows here
-            # For now, we skip non-reference product flows
-            print(f"Skipping non-reference product flow: {product}")
-            continue
+        # Gives you the option to try again if you make a mistake
+        while True:
+            try:
+                product = row['Flow_Name']
+                # TODO: add a check to see if there is more than one reference product. Just want to have a warning printed.
+                if row['Reference_Product']:
+                    exchange = create_ref_product_exchange(client, product, row['LCA_Amount'], row['LCA_Unit'], row['Is_Input'], row['Reference_Product'])
+                    exchanges.append(exchange)
+                    break
+                else:
+                    # If elementary flow, then we don't need to search for a process.
+                    if row['Flow_Type'] == 'Elementary Flows':
+                        # exchange = create_elementary_exchange(client, product, row['LCA_Amount'], row['LCA_Unit'], row['Is_Input'], row['Reference_Product'])
+                        # exchanges.append(exchange)
+                        break
+                    
+                    # If product flow, then we need to search for a process.
+                    elif row['Flow_Type'] == 'Product Flows':
+                        flow_uuid, process_uuid = search_and_select(keywords=product, flow_type_str='product', client=client)
+                    # If waste flow, then we need to search for a process.
+                    elif row['Flow_Type'] == 'Waste Flows':
+                        flow_uuid, process_uuid = search_and_select(keywords=product, flow_type_str='waste', client=client)
+                    else:
+                        raise ValueError(f"Invalid flow type: {row['Flow_Type']}")
+                    
+                    if flow_uuid is None:
+                        raise ValueError("No flow found.")
+                    elif process_uuid is None and row['Flow_Type'] != 'Elementary Flows':
+                        print('Warning: no process found for flow. You may continue without a process, or you can try again.')
+                        retry_response = input("Do you want to try again? (y/n): ").strip()
+                        if retry_response.lower().startswith('y'):
+                            continue
+                        elif retry_response.lower().startswith('n'):
+                            print('Continuing without a process.')
+                            # exchange = create_exchange(client, flow_uuid, process_uuid, row['LCA_Amount'], row['LCA_Unit'], row['Is_Input'], row['Reference_Product'])
+                            # exchanges.append(exchange)
+                            break
+                    else:
+                        # TODO: create exchange for product and waste flows
+                        # exchange = create_exchange(client, flow_uuid, process_uuid, row['LCA_Amount'], row['LCA_Unit'], row['Is_Input'], row['Reference_Product'])
+                        # exchanges.append(exchange)
+                        break
+                    
+            except Exception as e:
+                print(f"Error creating exchange for flow: {e}")
+                retry_response = input("Do you want to try again? (y/n): ").strip()
+                if retry_response.lower().startswith('y'):
+                    continue
+                elif retry_response.lower().startswith('n'):
+                    break
 
+    # NOTE: don't really need either of these sections anymore.
+    
     # 5. Create exchange for elementary flows
     # TODO: write function to create exchange for elementary flows
     #       the function should be able to read the uuid for each elementary flow from the dataframe and use it to create the exchange
