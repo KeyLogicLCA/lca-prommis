@@ -17,7 +17,6 @@
 # Import libraries
 ###################################################################################
 import logging
-from typing import Optional, Union
 import olca_schema as olca
 import olca_schema.units as o_units
 
