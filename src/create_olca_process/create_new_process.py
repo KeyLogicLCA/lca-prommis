@@ -168,3 +168,94 @@ def generate_id(prefix: str = "entity") -> str:
         str: Unique ID (36-character UUID string)
     """
     return str(uuid.uuid4())
+
+# Create exchange for reference product
+########################################################
+def create_ref_product_exchange(client, flowName, amount, unit, isInput, isRef):
+    # get unit object from unit name passed in the function
+    unit_obj = o_units.unit_ref(unit)
+    
+    # Find a flow property that contains this unit
+    flow_property = find_flow_property_for_unit(client, unit_obj)
+    if flow_property is None:
+        raise ValueError(f"Could not find a flow property for unit '{unit_obj.name}' in the openLCA database")
+    
+    # Create reference to the flow property
+    flow_property_ref = olca.Ref(
+        id=flow_property.id,
+        name=flow_property.name
+    )
+    
+    # Create flow property factor with proper reference
+    ex_flow_property_factor = olca.FlowPropertyFactor(
+        conversion_factor = 1.0,
+        is_ref_flow_property = True,
+        flow_property = flow_property_ref
+    )
+    
+    #Create flow with proper flow properties
+    ex_flow = olca.Flow(
+        id = generate_id(),
+        name = flowName,
+        description = f"Product flow for {flowName}",
+        flow_type = olca.FlowType.PRODUCT_FLOW,
+        flow_properties = [ex_flow_property_factor]
+    )
+    
+    # Save the flow to the database first
+    saved_flow = client.client.put(ex_flow)
+    print(f"Created flow: {saved_flow.name} with ID: {saved_flow.id}")
+    
+    # Create a flow reference for the exchange
+    flow_ref = olca.Ref(
+        id=saved_flow.id,
+        name=saved_flow.name
+    )
+    
+    # Use the saved flow reference to create the exchange
+    exchange = olca.Exchange(
+        flow = flow_ref,
+        flow_property = ex_flow_property_factor,
+        unit = unit_obj,
+        amount = amount,
+        is_input = isInput,
+        is_quantitative_reference = isRef
+    )
+    
+    return exchange
+
+# Helper function to find flow property for a unit
+def find_flow_property_for_unit(client, unit_obj):
+    """
+    Find a flow property that contains the given unit.
+    
+    Args:
+        client: NetlOlca client object
+        unit_obj: The unit object to find a flow property for
+    
+    Returns:
+        olca.FlowProperty: A flow property containing this unit or None if not found
+    """
+    try:
+        # Get all flow properties using NetlOlca's method
+        flow_properties = client.get_all(olca.FlowProperty)
+        
+        # Search through flow properties to find one that has the unit in its unit group
+        for flow_property in flow_properties:
+            if hasattr(flow_property, 'unit_group') and flow_property.unit_group:
+                # Get the unit group
+                if hasattr(flow_property.unit_group, 'id'):
+                    unit_group = client.client.get(olca.UnitGroup, flow_property.unit_group.id)
+                    if hasattr(unit_group, 'units') and unit_group.units:
+                        for unit in unit_group.units:
+                            if hasattr(unit, 'id') and hasattr(unit_obj, 'id'):
+                                if unit.id == unit_obj.id:
+                                    return flow_property
+                            elif hasattr(unit, 'name') and hasattr(unit_obj, 'name'):
+                                if unit.name == unit_obj.name:
+                                    return flow_property
+                                    
+    except Exception as e:
+        print(f"Error finding flow property for unit: {e}")
+        
+    return None
