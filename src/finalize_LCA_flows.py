@@ -245,7 +245,6 @@ def finalize_df(df: pd.DataFrame,
             
             try:
                 lower_flow_type = flow_type.lower()
-                print(flow_type)
                 context = context_mapping[lower_flow_type]
                 uuid = get_uuid(flow_name, context, elem_df)
             
