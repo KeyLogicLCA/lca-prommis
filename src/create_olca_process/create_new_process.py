@@ -101,6 +101,7 @@ def create_new_process(client, df, process_name, process_description):
     description = process_description
     
     # 3. Create exchange database
+    print('Creating exchange database, this may take a couple minutes...')
     exchange_database = create_exchange_database(client)
     
     # 4. Create empty process
