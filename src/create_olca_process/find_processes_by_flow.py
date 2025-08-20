@@ -33,7 +33,7 @@ import pandas as pd
 def find_processes_by_flow(exchanges_df, flow_uuid: str):
 
     # dataframe containing exchanges
-    df = exchanges_df
+    df = pd.DataFrame(exchanges_df)
 
     # filter rows from the database that have a flow uuid that matches the flow_uuid
     df.drop(df[df['exchange_uuid'] != flow_uuid].index, inplace=True)
