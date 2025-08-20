@@ -50,7 +50,6 @@
     # 3. olca_ipc
 
 # Import libraries
-import json
 import pandas as pd
 import olca_schema as olca
 import olca_ipc
@@ -59,10 +58,10 @@ from netlolca import NetlOlca
 import logging
 import re
 import uuid
-import datetime
-from typing import List, Optional, Tuple, Union
 from search_flows import search_and_select
-
+from search_flows import search_and_select
+from create_exchange_elementary_flow import create_exchange_elementary_flow
+from create_exchange_pr_wa_flow import create_exchange_pr_wa_flow
 
 logger = logging.getLogger(__name__)
 
@@ -81,25 +80,11 @@ def create_new_process(client, df, process_name, process_description):
     # 1. Read dataframe and review its structure
     df = read_dataframe(df)
 
-    # 2. Process metadata
-    # Process name
-    """
-    the process name should be provided by the user before calling this function
-    TODO: check if openlca has a limit on the number of characters for the name
-    """
-    name = process_name
-    # Process description
-    """        
-    the process description should be provided by the user before calling this function
-    TODO: check if openlca has a limit on the number of characters for the description
-    """
-    description = process_description
-    
-    # 3. Create empty process
-    process = create_empty_process(client, name, description)
+    # 2. Create empty process
+    process = create_empty_process(client, process_name, process_description)
     # TODO: use function from netlolca to create a new process
 
-    # 4. Create exchanges
+    # 3. Create exchanges
     exchanges = []
 
     # Loop through the dataframe, find reference product, and create exchange for it
@@ -108,46 +93,49 @@ def create_new_process(client, df, process_name, process_description):
         while True:
             try:
                 product = row['Flow_Name']
+                unit = row['LCA_Unit']
+                amount = row['LCA_Amount']
+                is_input = row['Is_Input']
                 # TODO: add a check to see if there is more than one reference product. Just want to have a warning printed.
                 if row['Reference_Product']:
-                    exchange = create_ref_product_exchange(client, product, row['LCA_Amount'], row['LCA_Unit'], row['Is_Input'], row['Reference_Product'])
+                    exchange = create_ref_product_exchange(client, product, amount, unit, is_input, row['Reference_Product'])
                     exchanges.append(exchange)
                     break
                 else:
                     # If elementary flow, then we don't need to search for a process.
-                    if row['Flow_Type'] == 'Elementary Flows':
-                        # exchange = create_elementary_exchange(client, product, row['LCA_Amount'], row['LCA_Unit'], row['Is_Input'], row['Reference_Product'])
-                        # exchanges.append(exchange)
+                    if row['Category'].lower() == 'elementary flows':
+                        exchange = create_exchange_elementary_flow(client, flow_uuid, unit, amount, is_input)
+                        exchanges.append(exchange)
                         break
                     
                     # If product flow, then we need to search for a process.
-                    elif row['Flow_Type'] == 'Product Flows':
-                        flow_uuid, process_uuid = search_and_select(keywords=product, flow_type_str='product', client=client)
+                    elif row['Category'].lower() == 'technosphere flows' or row['Category'].lower() == 'product flows':
+                        flow_uuid, provider_uuid = search_and_select(keywords=product, flow_type_str='product', client=client)
                     # If waste flow, then we need to search for a process.
-                    elif row['Flow_Type'] == 'Waste Flows':
-                        flow_uuid, process_uuid = search_and_select(keywords=product, flow_type_str='waste', client=client)
+                    elif row['Category'].lower() == 'waste flows':
+                        flow_uuid, provider_uuid = search_and_select(keywords=product, flow_type_str='waste', client=client)
                     else:
-                        raise ValueError(f"Invalid flow type: {row['Flow_Type']}")
+                        raise ValueError(f"Invalid category: {row['Category']}. Must be one of: elementary flows, product flows, technosphere flows, waste flows.")
                     
                     if flow_uuid is None:
                         raise ValueError("No flow found.")
-                    elif process_uuid is None and row['Flow_Type'] != 'Elementary Flows':
+                    elif provider_uuid is None:
                         print('Warning: no process found for flow. You may continue without a process, or you can try again.')
                         retry_response = input("Do you want to try again? (y/n): ").strip()
                         if retry_response.lower().startswith('y'):
                             continue
                         elif retry_response.lower().startswith('n'):
                             print('Continuing without a process.')
-                            # exchange = create_exchange(client, flow_uuid, process_uuid, row['LCA_Amount'], row['LCA_Unit'], row['Is_Input'], row['Reference_Product'])
-                            # exchanges.append(exchange)
+                            exchange = create_exchange_pr_wa_flow(client, flow_uuid, provider_uuid, amount, unit, is_input)
+                            exchanges.append(exchange)
                             break
                     else:
                         # TODO: create exchange for product and waste flows
-                        # exchange = create_exchange(client, flow_uuid, process_uuid, row['LCA_Amount'], row['LCA_Unit'], row['Is_Input'], row['Reference_Product'])
-                        # exchanges.append(exchange)
+                        exchange = create_exchange_pr_wa_flow(client, flow_uuid, provider_uuid, amount, unit, is_input)
+                        exchanges.append(exchange)
                         break
                     
-            except Exception as e:
+            except TypeError as e:
                 print(f"Error creating exchange for flow: {e}")
                 retry_response = input("Do you want to try again? (y/n): ").strip()
                 if retry_response.lower().startswith('y'):
@@ -155,24 +143,11 @@ def create_new_process(client, df, process_name, process_description):
                 elif retry_response.lower().startswith('n'):
                     break
 
-    # NOTE: don't really need either of these sections anymore.
-    
-    # 5. Create exchange for elementary flows
-    # TODO: write function to create exchange for elementary flows
-    #       the function should be able to read the uuid for each elementary flow from the dataframe and use it to create the exchange
 
-    # 6. Create exchange for product and waste flows
-    # TODO: write function that loops through the dataframe
-    #       for each row, the function prompts the user to enter keyword
-    #       the function uses the keyword, runs a query, and finds matching flows
-    #       the function then prompts the user to select a flow from the list of matching flows
-    #       the user should then select a process associated with the selected flow
-    #       the function then creates an exchange using the selected flow, process, and unit 
-
-    # 5. Create process
+    # 4. Create process
     process.exchanges = exchanges
 
-    # 6. Save process to openLCA
+    # 5. Save process to openLCA
     created_process = client.client.put(process)
     print(f"Successfully created process: {process_name}")
     print(f"Process saved successfully to openLCA database!")    
@@ -237,28 +212,6 @@ def generate_id(prefix: str = "entity") -> str:
 
 # Create exchanges 
 ########################################################
-# TODO: TEST THIS FUNCTION AND TEST IF THE NETLOLCA FUNCTION CAN ALSO CREATE A REFERENCE PRODUCT EXCHANGE
-
-# Creating an exchange requires defining its main attributes 
-# The main attributes (from reviewing individual JSON files) are defined in the following order:
-    # @type --> flow
-    # @id --> to be generated for the reference product since it's a new flow
-    # name --> the name of the flow from the dataframe
-    # description --> can be left blank
-    # version --> default set to "00.00.000"
-    # flowType --> there are three main flow types: ELEMENTARY_FLOW, PRODUCT_FLOW, WASTE_FLOW
-        # reference product flow is a PRODUCT_FLOW
-    # isInfrastructureFlow --> set to False
-    # flowProperties
-        # 0
-            # @type --> default set to "flowPropertyFactor"
-            # isRefFlowProperty --> set to True
-        # flowProperty
-            # @type --> default set to "FlowProperty"
-            # @id --> same as the flow id generated above
-            # name --> depends on unit -- e.g., if unit is kg --> this would be set to "Mass" 
-            # category --> default set to "Technical flow properties"
-            # refUnit --> taken from df (e.g., kg)
      
 # Helper function to find flow property for a unit
 def find_flow_property_for_unit(client, unit_obj):
