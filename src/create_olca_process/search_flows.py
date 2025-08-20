@@ -27,8 +27,8 @@ except Exception as e:
     olca = None  # type: ignore
 
 from netlolca import NetlOlca
-from flow_search_function import search_Flows_by_keywords
-from find_processes_by_flow import find_processes_by_flow
+from src.create_olca_process.flow_search_function import search_Flows_by_keywords
+from src.create_olca_process.find_processes_by_flow import find_processes_by_flow
 
 # -----------------------------------------------------------------------------
 # Utilities
@@ -105,6 +105,7 @@ def _prompt_select(rows: List[dict], display_keys: List[str], uuid_key: str, pro
 # -----------------------------------------------------------------------------
 
 def search_and_select(
+    exchanges_df,
     keywords: Optional[str] = None,
     flow_type_str: Optional[str] = None,
     client=None,
@@ -112,6 +113,7 @@ def search_and_select(
     """Search for a flow and (if applicable) a provider process.
 
     Args:
+        exchanges_df: dataframe containing exchanges
         keywords: keyword(s) to search flow names
         flow_type_str: 'product', 'waste', or 'elementary'
         client: optional pre-connected olca-ipc client
@@ -171,7 +173,7 @@ def search_and_select(
         return (None, None)
 
     # 2) Find processes associated with the selected flow (producers/providers)
-    proc_result = find_processes_by_flow(client, selected_flow_uuid)
+    proc_result = find_processes_by_flow(exchanges_df, selected_flow_uuid)
     producers_df = None
 
     # Handle either a single DF return or a tuple of (producers_df, consumers_df)
