@@ -29,6 +29,7 @@ except Exception as e:
 from netlolca import NetlOlca
 from src.create_olca_process.flow_search_function import search_Flows_by_keywords
 from src.create_olca_process.find_processes_by_flow import find_processes_by_flow
+from src.create_olca_process.create_exchange_database import create_exchange_database
 
 # -----------------------------------------------------------------------------
 # Utilities
@@ -125,12 +126,16 @@ def search_and_select(
     
     # If no keywords provided, prompt for them
     if keywords is None:
-        keywords = input("Enter flow name keyword(s): ").strip()
+        keywords = input("Enter flow name keyword(s). Type 'skip' to skip this flow. ").strip()
+    elif keywords.lower() == 'skip':
+        return ('skip', None)
     # If keywords provided, prompt, but allow user to press enter to use the default keywords
     else:
-        keywords_response = input(f"Enter flow name keyword(s). Press enter to use {keywords}: ").strip()
+        keywords_response = input(f"Enter flow name keyword(s). Type 'skip' to skip this flow. Press enter to use {keywords}: ").strip()
         if len(keywords_response) == 0:
             keywords = keywords
+        elif keywords_response.lower() == 'skip':
+            return ('skip', None)
         else:
             keywords = keywords_response
 
@@ -185,13 +190,14 @@ def search_and_select(
     if producers_df is None or len(producers_df) == 0:
         print("No provider processes found for the selected flow.")
         return (selected_flow_uuid, None)
+    print(producers_df)
 
     proc_rows = []
-    # Expected columns include 'Process_Name' and 'Process_UUID'
+    # Expected columns include 'process_name' and 'process_uuid'
     for _, row in producers_df.iterrows():
         proc_rows.append({
-            "Process_Name": str(row.get("Process_Name", "")),
-            "Process_UUID": str(row.get("Process_UUID", "")),
+            "Process_Name": str(row.get("process_name", "")),
+            "Process_UUID": str(row.get("process_uuid", "")),
         })
 
     selected_process_uuid = None
@@ -199,6 +205,7 @@ def search_and_select(
         proc_rows, display_keys=["Process_Name", "Process_UUID"], uuid_key="Process_UUID",
         prompt="Select a provider process"
     )
+    print(f"Selected process UUID: {selected_process_uuid}")
     if selected_process_uuid is None:
         return (selected_flow_uuid, None)
 
@@ -215,8 +222,9 @@ def main(argv: Optional[List[str]] = None):
     netl.connect()
     netl.read()
     argv = argv or sys.argv[1:]
+    exchange_database = create_exchange_database(netl)
     try:
-        flow_uuid, process_uuid = search_and_select(flow_type_str = 'product', client = netl)
+        flow_uuid, process_uuid = search_and_select(exchanges_df=exchange_database, flow_type_str = 'product', client = netl)
         print("\nResult:")
         print(f"Flow UUID    : {flow_uuid}")
         print(f"Process UUID : {process_uuid}")
