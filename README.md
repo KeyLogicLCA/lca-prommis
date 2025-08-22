@@ -1,4 +1,4 @@
-# NETL's USEEIO Infrastructure Model Web Application
+# LCA-PrOMMiS Integrated Application
 This jupyter lab application falls at the intersection of life cycle assessment (LCA) and the process optimization and modeling for minerals sustainability (PrOMMiS). This application (in it's current version) allows users to evaluate critical mineral processing flowsheets via PrOMMiS, and use the corresponding results to evaluate the environmental impact of the flowsheet using life cycle assessment. 
 PrOMMiS is an open-source code, that enables design choices with costing, to perform process optimization, and
 to accelerate development and deployment of extraction and purification processes for critical minerals/rare earth
