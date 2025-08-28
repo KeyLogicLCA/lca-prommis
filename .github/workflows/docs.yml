@@ -7,6 +7,8 @@ on:
 jobs:
   docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -16,7 +18,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install sphinx
-          # add your theme/extensions if any, e.g.:
+          # add your Sphinx extras here if you use them:
           # pip install furo myst-parser sphinx-autodoc-typehints
       - name: Build HTML
         run: sphinx-build -b html docs docs/_build/html
