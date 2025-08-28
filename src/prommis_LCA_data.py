@@ -65,7 +65,7 @@ def main():
     """
     m, results = uky.main()
     df = get_lca_df(m)
-    df.to_csv("lca_df.csv")
+    df.to_csv("output/lca_df.csv")
     return df
 
 
