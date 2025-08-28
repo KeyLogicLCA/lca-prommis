@@ -3,3 +3,8 @@
 .ipynb_checkpoints
 *.pyc
 __pycache__
+
+# Sphinx build artifacts
+docs/_build/
+docs/_static/  # only if it's auto-generated (keep if you put custom images/css here!)
+docs/_templates/  # only if auto-generated (keep if you created custom templates)
