@@ -4,5 +4,7 @@
 *.pyc
 __pycache__
 
+src/generate_results_by_category.py
+
 # Ignore all sphynx documentation stuff
 docs

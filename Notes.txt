@@ -58,33 +58,81 @@ This step is performed in finalize_LCA_flows.py. The main() function utilizes th
     2- Create a new unit process and prompt the user to enter its metadata (e.g., name, description, etc.)
     3- Read the dataframe produced in steps 2.1 and 2.2
     4- A function loops through the dataframe row by row and for each row creates a flow to be entered in the unit process
-       Creating flows involves:
-            a- determining if its a technosphere flow or an elementary flow     >> The user should determine that
-            b- Selecting a unit process to model this flow                      >> The user enters keywords --> query to search the database --> return possible matches --> user selects a match
-            c- Setting the unit                                                 >> The unit is read from the provided dataframe --> if the unit is not available --> user selects one of the available units
-            d- Setting the flow value/amount                                    >> the flow value/amount is retrieved from the provided dataframe
+            - The function first creates an empty process
+            - then it creates an exchange for the reference product
+            - then for each row in the given dataframe
+                - if the flow is ELEMENTARY_FLOW --> the function automatically creates an exchange for it using a predefined uuid
+                    * Our work includes a dictionary for elementary flows in FEDEFL with their uuids
+                - if the flow is product or waste flow 
+                    * the user enters a keyword used to fetch given flows
+                    * the user selects a flow from a given convert_flows_to_lca_units
+                    * the function searches for processes that provide the given flow
+                    * the user select a process
+                    * FUNCTION MOVES TO THE NEXT ROW 
+        For all the steps above, the flow amount, unit, input/output are all retrieved from the given df generated in steps 2.1-2.2
+    
+    #########################################################################
+    # FOR FUTURE REFERENCE - TODO'S IN THE ABOVE STEPS
+        High priority:
+        --------------
+        - Review the developed database
+        - Compile inventory for missing chemicals in our database and create processes for them
+        - Create a impact assessment method that calculates GWP, CED, and Water consumption - and add it to the database 
+        
+        Low priority:
+        -------------
+        - Provide the user with the option of changing their keyword 
+        - Currently the function creates an exchange for that reference flow from scratch
+            it should be modified to account for cases where a flow exists in the database for that reference product  
 
-    The end goal of this step is to create a process 
-
-    TODO: 
-    # Adjust addition of reference product 
-    # Improve search function
-    # Save an instance of the user selection for future iterations
-    # Give the user the option to change keywords (after getting the results)
-    # Continue revising current code to use netlolca library or create new functions for netlolca library
+    #########################################################################
 
 Step 3: Run openLCA model
 -------------------------
 
+Running the analysis in openLCA requires building the analysis setup
+we should create a calculationsetup object and then define its attributes:
+    - allocation --> if omitted then default allocation is used. In this version of the code, default allocation will be used.
+    - amount: FU amount --> if omitted, the quantitative reference amount is used
+    - impact_method --> if omitted, we don't get a LCIA but rather only a LCI
+    - normalization and weighting set
+    - parameters --> specific run parameter
+    - target: this is what we're calculating --> this takes a product system object 
+    - unit --> overrides FU
+    - with_costs: includes cost calculation
+    - with regionalization --> enables regionalized LCA
 
+To run the analysis, the jupyter notebook user should use the run_analysis function which takes in three main arguments
+    - the client (netl)
+    - the product system uuid
+    - the impact assessment method uuid
 
+Here it's important to note that the method uuid will be pre-defined in the jupyter notebook.
+In this project we are attaching a openLCA database that contains:
+    - the needed libraries/processes to evaluate the PrOMMiS flowsheets
+    - a impact assessment method that evaluates water consumption, CED, and global warming potential  
 
 Step 4: Extract openLCA results
 -------------------------------
 
+Step 3 returns a result object that can be used to extract the LCIA results
 
-
-
+In this step two sets of results are extracted for each impact category (GWP, CED, WC)
+    - Total impact
+    - Impacts by category
 
 Step 5: Pass openLCA results to PrOMMiS
 ---------------------------------------
+
+
+
+Questions and future considerations
+------------------------------------
+1- Is hotspot analysis a part of the final outcome?
+    If not then the current model structure is finalize_df
+    If yes, then this would require modeling the UKy flowsheet (for example) 
+    using process-based LCA rather than aggregating all the inventory in one unit process
+    In the second case (yes), we might need to do minor changes to the model structure to 
+    allow modeling each process unit separately (something to keep in mind: in the case of 
+    processes producing co-products/by-products, this becomes exponentially more complex to 
+    solve - but definitely doable)
