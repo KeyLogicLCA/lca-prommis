@@ -34,11 +34,16 @@ Step 2: Communicate PrOMMiS results with openLCA
 
     Step 2.1: Develop function to convert PrOMMiS results to LCA-relevant results
     ============================================================================
-This step is performed in prommis_LCA_conversions.py. The main function in the script, convert_flows_to_lca_units, adds two new columns to the dataframe from step 1: LCA Amount and LCA Unit (usually kg, m3, L, kWh, or MJ). This function uses the Pyomo framework and a robust error-handling system to convert any common unit to LCA units. It also uses pubchempy and pymatgen to convert moles to kg for any common chemical name. It returns the new df and creates a new csv file.
+This step is performed in prommis_LCA_conversions.py. The main function in the script, convert_flows_to_lca_units, 
+adds two new columns to the dataframe from step 1: LCA Amount and LCA Unit (usually kg, m3, L, kWh, or MJ). This 
+function uses the Pyomo framework and a robust error-handling system to convert any common unit to LCA units. 
+It also uses pubchempy and pymatgen to convert moles to kg for any common chemical name. 
+It returns the new df and creates a new csv file.
 
     Step 2.2: Develop function that evaluates PrOMMiS flows and converts them to LCA-relevant flows normalized to selected FU.
     =========================================================================================================================
-This step is performed in finalize_LCA_flows.py. The main() function utilizes the merge_flows and finalize_df functions to convert the LCA information into a new dataframe which is ready to be imported into openLCA. The main function completes the following steps:
+This step is performed in finalize_LCA_flows.py. The main() function utilizes the merge_flows and finalize_df functions to convert 
+the LCA information into a new dataframe which is ready to be imported into openLCA. The main function completes the following steps:
 
 1. Imports the LCA csv from the previous step
 2. Uses the merge_flows function to:
