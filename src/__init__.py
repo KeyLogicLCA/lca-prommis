@@ -5,3 +5,4 @@ import src.prommis_LCA_data as data_lca
 import src.create_ps as create_ps
 import src.run_analysis as run_analysis
 import src.generate_total_results as generate_total_results
+import src.generate_contribution_tree as generate_contribution_tree
