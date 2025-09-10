@@ -7,40 +7,40 @@ The National Energy Technology Lanboratory (NETL) GitHub project code is provide
 
 ## Repository Organization
 
-lca-prommis/
-├── images/  
-|   ├── uky_flowsheet.png    
-│
-├── output/             
-│   ├── lca_df.csv              <- csv containing the raw data from prommis -- outcome of src/
-|   ├── lca_df_converted.csv    <- csv containing the prommis data converted to lca format -- outcome of src/
-|   ├── lca_df_finalized.csv    <- csv containing the finalized lca data (normalized to FU) -- outcome of src/
-|
-|
-├── src/ 
-│   ├── create_olca_process
-│   │   ├── __init__.py
-│   │   ├── create_new_process.py
-│   │   ├── create_exchange_elementary_flow.py
-│   │   ├── create_exchange_pr_wa_flow.py
-│   │   ├── create_exchange_database.py
-│   │   ├── find_processes_by_flow.py
-|   |   ├── flow_search_function.py
-│   │   └── search_flows.py
-│   ├── __init__.py
-│   ├── prommis_LCA_data.py
-│   ├── prommis_LCA_conversions.py
-│   ├── finalize_LCA_flows.py
-│   ├── create_ps.py
-│   ├── run_analysis.py
-│   ├── generate_total_results.py
-│   └── generate_contribution_tree.py
-│
-├── .gitignore        <- Git repo ignore list
-├── Notes.txt
-├── README.md         <- The top-level README.
-├── requirements.txt          
-└── PrOMMiS_LCA_Model.ipynb <- Unit Process development template.
+    lca-prommis/
+    ├── images/  
+    |   ├── uky_flowsheet.png    
+    │
+    ├── output/             
+    │   ├── lca_df.csv              <- csv containing the raw data from prommis -- outcome of src/
+    |   ├── lca_df_converted.csv    <- csv containing the prommis data converted to lca format -- outcome of src/
+    |   ├── lca_df_finalized.csv    <- csv containing the finalized lca data (normalized to FU) -- outcome of src/
+    |
+    |
+    ├── src/ 
+    │   ├── create_olca_process
+    │   │   ├── __init__.py
+    │   │   ├── create_new_process.py
+    │   │   ├── create_exchange_elementary_flow.py
+    │   │   ├── create_exchange_pr_wa_flow.py
+    │   │   ├── create_exchange_database.py
+    │   │   ├── find_processes_by_flow.py
+    |   |   ├── flow_search_function.py
+    │   │   └── search_flows.py
+    │   ├── __init__.py
+    │   ├── prommis_LCA_data.py
+    │   ├── prommis_LCA_conversions.py
+    │   ├── finalize_LCA_flows.py
+    │   ├── create_ps.py
+    │   ├── run_analysis.py
+    │   ├── generate_total_results.py
+    │   └── generate_contribution_tree.py
+    │
+    ├── .gitignore        <- Git repo ignore list
+    ├── Notes.txt
+    ├── README.md         <- The top-level README.
+    ├── requirements.txt          
+    └── PrOMMiS_LCA_Model.ipynb <- Unit Process development template.
 
 ## Setup
 
