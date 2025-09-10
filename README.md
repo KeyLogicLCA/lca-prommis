@@ -5,6 +5,43 @@ PrOMMiS is an open-source code, that enables design choices with costing, to per
 ## Disclaimer
 The National Energy Technology Lanboratory (NETL) GitHub project code is provided on an "as is" basis and the user assumes responsibility for its use. 
 
+## Repository Organization
+
+lca-prommis/
+├── images/  
+|   ├── uky_flowsheet.png    
+│
+├── output/             
+│   ├── lca_df.csv              <- csv containing the raw data from prommis -- outcome of src/
+|   ├── lca_df_converted.csv    <- csv containing the prommis data converted to lca format -- outcome of src/
+|   ├── lca_df_finalized.csv    <- csv containing the finalized lca data (normalized to FU) -- outcome of src/
+|
+|
+├── src/ 
+│   ├── create_olca_process
+│   │   ├── __init__.py
+│   │   ├── create_new_process.py
+│   │   ├── create_exchange_elementary_flow.py
+│   │   ├── create_exchange_pr_wa_flow.py
+│   │   ├── create_exchange_database.py
+│   │   ├── find_processes_by_flow.py
+|   |   ├── flow_search_function.py
+│   │   └── search_flows.py
+│   ├── __init__.py
+│   ├── prommis_LCA_data.py
+│   ├── prommis_LCA_conversions.py
+│   ├── finalize_LCA_flows.py
+│   ├── create_ps.py
+│   ├── run_analysis.py
+│   ├── generate_total_results.py
+│   └── generate_contribution_tree.py
+│
+├── .gitignore        <- Git repo ignore list
+├── Notes.txt
+├── README.md         <- The top-level README.
+├── requirements.txt          
+└── PrOMMiS_LCA_Model.ipynb <- Unit Process development template.
+
 ## Setup
 
 The instructions for setup are based on those found [here](https://idaes-pse.readthedocs.io/en/stable/tutorials/getting_started/mac_osx.html).
