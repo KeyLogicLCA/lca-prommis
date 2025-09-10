@@ -123,8 +123,22 @@ Step 4: Extract openLCA results
 Step 3 returns a result object that can be used to extract the LCIA results
 
 In this step two sets of results are extracted for each impact category (GWP, CED, WC)
-    - Total impact
-    - Impacts by category
+    - Total impact: The total impacts are calculated using the generate_total_results function in the generate_total_results.py module.
+                    This function uses get_total_impacts() attribute of a olca_schema object 
+
+    - Impacts by category:  This is also referred to as 'contribution tree' in openLCA. 
+                            To get the contribution tree, we use the generate_contribution_tree function from the generate_contribution_tree.py module 
+                            This method heavily relies on the utree module from olca_ipc library
+                            This method requires the user to determine the number of nodes and levels.
+                            Nodes are also referred to as the child nodes of a process like electricity, hear, sulfuric acid, etc. (e.g., impact by category)
+                            Levels represent the number of step away from the main product.
+                            Few important notes on this function and its application
+                                a- setting nodes to (-1) reports all the nodes possible --> should be recommended in the analysis 
+                                b- setting levels to (1) reports the total impact for each node (no ramifications)
+                                c- the utree method in itself does not report direct contributions (e.g., direct emissions for GWP results)
+                                    To resolve this, our function includes the necessary steps to back-calculate the direct contributions 
+                                    using the total result and the table result for generate_contribution_tree(result, 1, -1)
+
 
 Step 5: Pass openLCA results to PrOMMiS
 ---------------------------------------

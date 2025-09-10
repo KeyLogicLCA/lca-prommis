@@ -60,7 +60,11 @@ def generate_contribution_tree(result, max_expand_levels, max_expand_nodes):
     # for each impact category generate the results contribution tree
     n=0 # this is defined here and used below to refer to the row of the impact category being analyzed
     # n is updated (+1) after every loop
+
+    df_to_return = pd.DataFrame()
+
     for impact_category in impact_categories:
+        impact_category_name = impact_categories_df.iloc[n, 6]
         root = utree.of(result,impact_category)
         # create empty dataframe
         df = pd.DataFrame()
@@ -69,32 +73,26 @@ def generate_contribution_tree(result, max_expand_levels, max_expand_nodes):
         # convert the results to a dataframe - for some reason i 
         # had to add this line to covert the results AGAIN to a dataframe
         df = pd.DataFrame(df)
+        df = df.rename(columns={0: "Level", 1: "Provider", 2: "Result", 3: "Direct_Contribution"})
+        df["Impact_Category"] = impact_category_name
         # generate clean file name
-        filename = re.sub(r'[<>:"/\\|?*]', "_", str(impact_categories_df.iloc[n, 6]))
+        filename = re.sub(r'[<>:"/\\|?*]', "_", str(impact_category_name))
         # export the results to a csv file and store in output folder
         df.to_csv(f"../output/{filename}.csv")
         n+=1
-
-
+        df_to_return = pd.concat([df_to_return, df])
+    return df_to_return
+    
 #############################################################################################
 # Helper Function
 # Note: this function has been imported from 
 # "https://greendelta.github.io/openLCA-ApiDoc/results/impacts/upstream_trees.html" 
 # and modified as shown below; the original method printed the result but ddnt return it
 def expand(node: utree.Node, level: int, max_expand_levels, max_expand_nodes):
-    """This function recursively expands an upstream tree.
-
-    The maximum number of levels and maximum number of child nodes are defined
-    with the constants above. Note that an upstream tree can be
-    """
     results = []
-    indent = "  " * level
-    results.append(f"{indent} - {node.provider.name} : {node.result}")
+    indent = (level, node.provider.name, node.result, node.direct_contribution) 
+    results.append(indent)
     if level < max_expand_levels:
         for c in node.childs[0:max_expand_nodes]:
             results.extend(expand(c, level + 1, max_expand_levels, max_expand_nodes))
     return results
-
-
-
-

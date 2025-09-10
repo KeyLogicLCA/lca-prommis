@@ -5,6 +5,48 @@ PrOMMiS is an open-source code, that enables design choices with costing, to per
 ## Disclaimer
 The National Energy Technology Lanboratory (NETL) GitHub project code is provided on an "as is" basis and the user assumes responsibility for its use. 
 
+## Repository Organization
+
+    lca-prommis/
+    ├── images/  
+    |   └── uky_flowsheet.png    
+    │
+    ├── output/             
+    │   ├── lca_df.csv                              <- csv containing the raw data from prommis 
+    |   ├── lca_df_converted.csv                    <- csv containing the prommis data converted to lca format 
+    |   └── lca_df_finalized.csv                    <- csv containing the finalized lca data (normalized to FU) 
+    |
+    |
+    ├── src/ 
+    │   ├── create_olca_process
+    │   │   ├── __init__.py
+    │   │   ├── create_new_process.py               <- main function to create new process in openLCA
+    │   │   ├── create_exchange_elementary_flow.py  <- function to create an exchange for an elementary flow
+    │   │   ├── create_exchange_pr_wa_flow.py       <- function to create an exchange for product and waste flows
+    │   │   ├── create_exchange_database.py         <- function to create an exchange database
+    │   │   ├── find_processes_by_flow.py           <- function to query an openLCA database and find the 
+    |   |   |                                              provider for specific flows
+    |   |   ├── flow_search_function.py             <- function to query an openLCA database and find a flow by 
+    |   |   |                                              keyword
+    │   │   └── search_flows.py                     <- user interface code to search for flows
+    │   ├── __init__.py
+    │   ├── prommis_LCA_data.py                     <- code to run PrOMMiS model and extract data
+    │   ├── prommis_LCA_conversions.py              <- code to convert PrOMMiS data to LCA relevant units
+    │   ├── finalize_LCA_flows.py                   <- code to normalize data to FU and assign UUIDs to 
+    |   |                                                 elementary flows
+    │   ├── create_ps.py                            <- function to create product system given a unit process
+    │   ├── run_analysis.py                         <- function to assign impact assessment method and run 
+    |   |                                                 analysis
+    │   ├── generate_total_results.py               <- function to generate total LCA results
+    │   └── generate_contribution_tree.py           <- function to generate results by category 
+    |                                                    (contribution tree)
+    │
+    ├── .gitignore                                  <- Git repo ignore list
+    ├── Notes.txt                                   <- Notes summarizing approach to develop the PrOMMiS LCA model
+    ├── README.md                                   <- The top-level README.
+    ├── requirements.txt                            
+    └── PrOMMiS_LCA_Model.ipynb                     <- Jupyter notebook with steps to develop LCA model
+
 ## Setup
 
 The instructions for setup are based on those found [here](https://idaes-pse.readthedocs.io/en/stable/tutorials/getting_started/mac_osx.html).
