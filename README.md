@@ -12,35 +12,40 @@ The National Energy Technology Lanboratory (NETL) GitHub project code is provide
     |   ├── uky_flowsheet.png    
     │
     ├── output/             
-    │   ├── lca_df.csv              <- csv containing the raw data from prommis -- outcome of src/
-    |   ├── lca_df_converted.csv    <- csv containing the prommis data converted to lca format -- outcome of src/
-    |   ├── lca_df_finalized.csv    <- csv containing the finalized lca data (normalized to FU) -- outcome of src/
+    │   ├── lca_df.csv                              <- csv containing the raw data from prommis 
+    |   ├── lca_df_converted.csv                    <- csv containing the prommis data converted to lca format 
+    |   ├── lca_df_finalized.csv                    <- csv containing the finalized lca data (normalized to FU) 
     |
     |
     ├── src/ 
     │   ├── create_olca_process
     │   │   ├── __init__.py
-    │   │   ├── create_new_process.py
-    │   │   ├── create_exchange_elementary_flow.py
-    │   │   ├── create_exchange_pr_wa_flow.py
-    │   │   ├── create_exchange_database.py
-    │   │   ├── find_processes_by_flow.py
-    |   |   ├── flow_search_function.py
-    │   │   └── search_flows.py
+    │   │   ├── create_new_process.py               <- main function to create new process in openLCA
+    │   │   ├── create_exchange_elementary_flow.py  <- function to create an exchange for an elementary flow
+    │   │   ├── create_exchange_pr_wa_flow.py       <- function to create an exchange for product and waste flows
+    │   │   ├── create_exchange_database.py         <- function to create an exchange database
+    │   │   ├── find_processes_by_flow.py           <- function to query an openLCA database and find the 
+                                                        provider for specific flows
+    |   |   ├── flow_search_function.py             <- function to query an openLCA database and find a flow by 
+                                                        keyword
+    │   │   └── search_flows.py                     <- user interface code to search for flows
     │   ├── __init__.py
-    │   ├── prommis_LCA_data.py
-    │   ├── prommis_LCA_conversions.py
-    │   ├── finalize_LCA_flows.py
-    │   ├── create_ps.py
-    │   ├── run_analysis.py
-    │   ├── generate_total_results.py
-    │   └── generate_contribution_tree.py
+    │   ├── prommis_LCA_data.py                     <- code to run PrOMMiS model and extract data
+    │   ├── prommis_LCA_conversions.py              <- code to convert PrOMMiS data to LCA relevant units
+    │   ├── finalize_LCA_flows.py                   <- code to normalize data to FU and assign UUIDs to 
+                                                        elementary flows
+    │   ├── create_ps.py                            <- function to create product system given a unit process
+    │   ├── run_analysis.py                         <- function to assign impact assessment method and run 
+                                                        analysis
+    │   ├── generate_total_results.py               <- function to generate total LCA results
+    │   └── generate_contribution_tree.py           <- function to generate results by category 
+                                                        (contribution tree)
     │
-    ├── .gitignore        <- Git repo ignore list
-    ├── Notes.txt
-    ├── README.md         <- The top-level README.
-    ├── requirements.txt          
-    └── PrOMMiS_LCA_Model.ipynb <- Unit Process development template.
+    ├── .gitignore                                  <- Git repo ignore list
+    ├── Notes.txt                                   <- Notes summarizing approach to develop the PrOMMiS LCA model
+    ├── README.md                                   <- The top-level README.
+    ├── requirements.txt                            
+    └── PrOMMiS_LCA_Model.ipynb                     <- Jupyter notebook with steps to develop LCA model
 
 ## Setup
 
