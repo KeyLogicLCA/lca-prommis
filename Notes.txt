@@ -80,9 +80,8 @@ the LCA information into a new dataframe which is ready to be imported into open
     # FOR FUTURE REFERENCE - TODO'S IN THE ABOVE STEPS
         High priority:
         --------------
-        - Review the developed database
         - Compile inventory for missing chemicals in our database and create processes for them
-        - Create a impact assessment method that calculates GWP, CED, and Water consumption - and add it to the database 
+        - [In Progress]: Create a impact assessment method that calculates GWP, CED, and Water consumption - and add it to the database 
         
         Low priority:
         -------------
@@ -135,9 +134,6 @@ In this step two sets of results are extracted for each impact category (GWP, CE
                             Few important notes on this function and its application
                                 a- setting nodes to (-1) reports all the nodes possible --> should be recommended in the analysis 
                                 b- setting levels to (1) reports the total impact for each node (no ramifications)
-                                c- the utree method in itself does not report direct contributions (e.g., direct emissions for GWP results)
-                                    To resolve this, our function includes the necessary steps to back-calculate the direct contributions 
-                                    using the total result and the table result for generate_contribution_tree(result, 1, -1)
 
 
 Step 5: Pass openLCA results to PrOMMiS
