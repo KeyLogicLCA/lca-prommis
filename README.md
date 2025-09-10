@@ -9,12 +9,12 @@ The National Energy Technology Lanboratory (NETL) GitHub project code is provide
 
     lca-prommis/
     ├── images/  
-    |   ├── uky_flowsheet.png    
+    |   └── uky_flowsheet.png    
     │
     ├── output/             
     │   ├── lca_df.csv                              <- csv containing the raw data from prommis 
     |   ├── lca_df_converted.csv                    <- csv containing the prommis data converted to lca format 
-    |   ├── lca_df_finalized.csv                    <- csv containing the finalized lca data (normalized to FU) 
+    |   └── lca_df_finalized.csv                    <- csv containing the finalized lca data (normalized to FU) 
     |
     |
     ├── src/ 
@@ -25,21 +25,21 @@ The National Energy Technology Lanboratory (NETL) GitHub project code is provide
     │   │   ├── create_exchange_pr_wa_flow.py       <- function to create an exchange for product and waste flows
     │   │   ├── create_exchange_database.py         <- function to create an exchange database
     │   │   ├── find_processes_by_flow.py           <- function to query an openLCA database and find the 
-                                                        provider for specific flows
+    |   |   |                                              provider for specific flows
     |   |   ├── flow_search_function.py             <- function to query an openLCA database and find a flow by 
-                                                        keyword
+    |   |   |                                              keyword
     │   │   └── search_flows.py                     <- user interface code to search for flows
     │   ├── __init__.py
     │   ├── prommis_LCA_data.py                     <- code to run PrOMMiS model and extract data
     │   ├── prommis_LCA_conversions.py              <- code to convert PrOMMiS data to LCA relevant units
     │   ├── finalize_LCA_flows.py                   <- code to normalize data to FU and assign UUIDs to 
-                                                        elementary flows
+    |   |                                                 elementary flows
     │   ├── create_ps.py                            <- function to create product system given a unit process
     │   ├── run_analysis.py                         <- function to assign impact assessment method and run 
-                                                        analysis
+    |   |                                                 analysis
     │   ├── generate_total_results.py               <- function to generate total LCA results
     │   └── generate_contribution_tree.py           <- function to generate results by category 
-                                                        (contribution tree)
+    |                                                    (contribution tree)
     │
     ├── .gitignore                                  <- Git repo ignore list
     ├── Notes.txt                                   <- Notes summarizing approach to develop the PrOMMiS LCA model
