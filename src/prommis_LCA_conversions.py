@@ -106,9 +106,9 @@ def main():
     - Uses default conversion parameters (1 hour period, moles to kg, water in m3)
     - Handles all unit conversions automatically based on flow categories
     """
-    df = pd.read_csv('../output/lca_df.csv')
+    df = pd.read_csv('output/lca_df.csv')
     df = convert_flows_to_lca_units(df)
-    df.to_csv('../output/lca_df_converted.csv', index=False)
+    df.to_csv('output/lca_df_converted.csv', index=False)
     return df
 
 
