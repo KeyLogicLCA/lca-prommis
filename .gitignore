@@ -5,7 +5,6 @@
 __pycache__
 output
 personal_notes.txt
-resources
 
 # Ignore all sphynx documentation stuff
 docs
