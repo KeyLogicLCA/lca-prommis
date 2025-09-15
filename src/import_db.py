@@ -11,10 +11,12 @@ import os
 
 def import_db(resource_id):
     api_key = input("Enter your EDX API key: ")
-    resource_id = ''
-    output_dir = 'resources'
+    resources_path = os.path.abspath(os.path.join(os.getcwd(), '../resources'))
+    if not os.path.exists(resources_path):
+        os.makedirs(resources_path)
+    output_dir = resources_path
     download_edx(resource_id, api_key, output_dir)
-    print("Database downloaded successfully")
+    return True
 
 
 def download_edx(resource_id, api_key, output_dir):
