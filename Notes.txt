@@ -65,6 +65,12 @@ the LCA information into a new dataframe which is ready to be imported into open
     4- A function loops through the dataframe row by row and for each row creates a flow to be entered in the unit process
             - The function first creates an empty process
             - then it creates an exchange for the reference product
+                - Here the user is given two options:
+                    * Option 1: create exchange for quantitatve reference from an existing flow. If this is selected - the user has to:
+                        a- enter a keyword --> the user is provided with a list of product flows available in the database (connected via IPC)
+                        b- the user selects a flow
+                        c- an exchange is created
+                    * Option 2: create new flow, use it to create exchange, and set it as quantitative reference
             - then for each row in the given dataframe
                 - if the flow is ELEMENTARY_FLOW --> the function automatically creates an exchange for it using a predefined uuid
                     * Our work includes a dictionary for elementary flows in FEDEFL with their uuids
@@ -85,9 +91,7 @@ the LCA information into a new dataframe which is ready to be imported into open
         
         Low priority:
         -------------
-        - Provide the user with the option of changing their keyword 
-        - Currently the function creates an exchange for that reference flow from scratch
-            it should be modified to account for cases where a flow exists in the database for that reference product  
+        - Provide the user with the option of changing their keyword  
 
     #########################################################################
 
@@ -151,3 +155,24 @@ Questions and future considerations
     allow modeling each process unit separately (something to keep in mind: in the case of 
     processes producing co-products/by-products, this becomes exponentially more complex to 
     solve - but definitely doable)
+
+Next updates (09/15/2025)
+------------------------------------
+
+- Update markup in Jupyter Notebook to explain better the process of creating a product 
+system in openLCA and generating results. Information to add
+    1- More information on impact assessment methods (100 yr vs 20 yr) and what they calculate
+    2- Assumptions when using the JNB to create an LCA model
+    3- Explaing system boundary and add SB figure 
+
+- Upload database on EDX
+    - create new workspace
+    - add files to it
+
+- Update error handling 
+    - create_new_process.py 
+        * improve error handling to make it more what the error is about 
+            for example, elementary flow uuid error is appearing right 
+            after reference product creation step
+
+        Possible Quick fix - add print statement before each step

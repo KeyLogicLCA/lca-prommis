@@ -120,7 +120,7 @@ def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Ro
     original study used 357 ppm. Some wastewater streams are organic waste but are
     treated as wastewater for consistency.
     """
-    df = pd.read_csv('../output/lca_df_converted.csv')
+    df = pd.read_csv('output/lca_df_converted.csv')
     
     # Run the merge_flows function for the feed
     REO_list = [
@@ -169,7 +169,7 @@ def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Ro
     except Exception as e:
         print(f"Error during finalization: {e}")
     
-    finalized_df.to_csv('../output/lca_df_finalized.csv', index=False)
+    finalized_df.to_csv('output/lca_df_finalized.csv', index=False)
     return finalized_df
 
 

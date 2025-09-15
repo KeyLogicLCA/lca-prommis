@@ -4,6 +4,9 @@ from src.create_olca_process.create_exchange_pr_wa_flow import create_exchange_p
 from src.create_olca_process.create_new_process import create_new_process
 from src.create_olca_process.find_processes_by_flow import find_processes_by_flow
 from src.create_olca_process.flow_search_function import search_Flows_by_keywords
-from src.create_olca_process.search_flows import main as search_flows
-from src.create_olca_process.search_flows import search_and_select
- 
+from src.create_olca_process.search_flows_and_providers import main as search_flows
+from src.create_olca_process.search_flows_and_providers import search_and_select
+from src.create_olca_process.search_flows_only import search_and_select_flows
+from src.create_olca_process.create_exchange_ref_flow import create_exchange_ref_flow
+from src.create_olca_process.create_exchange_ref_flow import create_exchange_ref_existing_flow
+from src.create_olca_process.create_exchange_ref_flow import create_exchange_ref_new_flow
