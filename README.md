@@ -17,6 +17,9 @@ The National Energy Technology Lanboratory (NETL) GitHub project code is provide
     |   └── lca_df_finalized.csv                    <- csv containing the finalized lca data (normalized to FU) 
     |
     |
+    ├── resources                                   <- destination directory for openLCA database downloaded
+    |                                                   from EDX
+    |
     ├── src/ 
     │   ├── create_olca_process
     │   │   ├── __init__.py
@@ -24,11 +27,15 @@ The National Energy Technology Lanboratory (NETL) GitHub project code is provide
     │   │   ├── create_exchange_elementary_flow.py  <- function to create an exchange for an elementary flow
     │   │   ├── create_exchange_pr_wa_flow.py       <- function to create an exchange for product and waste flows
     │   │   ├── create_exchange_database.py         <- function to create an exchange database
+    │   │   ├── create_exchange_ref_flow.py         <- function to create an exchange for the quantitative reference
+    |   |   |                                              flow
     │   │   ├── find_processes_by_flow.py           <- function to query an openLCA database and find the 
     |   |   |                                              provider for specific flows
     |   |   ├── flow_search_function.py             <- function to query an openLCA database and find a flow by 
     |   |   |                                              keyword
-    │   │   └── search_flows.py                     <- user interface code to search for flows
+    |   |   ├── search_flows_only.py                <- user interface code to search and extract only flows
+    │   │   └── search_flows_and_providers.py       <- user interface code to search for flows and their associated
+    |   |                                                  providers
     │   ├── __init__.py
     │   ├── prommis_LCA_data.py                     <- code to run PrOMMiS model and extract data
     │   ├── prommis_LCA_conversions.py              <- code to convert PrOMMiS data to LCA relevant units
@@ -37,6 +44,7 @@ The National Energy Technology Lanboratory (NETL) GitHub project code is provide
     │   ├── create_ps.py                            <- function to create product system given a unit process
     │   ├── run_analysis.py                         <- function to assign impact assessment method and run 
     |   |                                                 analysis
+    |   ├── import_db.py                            <- function to import openLCA database from EDX
     │   ├── generate_total_results.py               <- function to generate total LCA results
     │   └── generate_contribution_tree.py           <- function to generate results by category 
     |                                                    (contribution tree)
