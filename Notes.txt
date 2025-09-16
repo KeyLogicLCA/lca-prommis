@@ -144,6 +144,36 @@ Step 5: Pass openLCA results to PrOMMiS
 ---------------------------------------
 
 
+Database Development notes
+--------------------------
+A database is developed with the required data and methods to create an openLCA model for 
+the PrOMMiS UKy flowsheet.
+
+1- Regarding data, the following libraries are used:
+        - USLCI 
+        - Separate UPs that are not found in the Federal LCA Commons are exported from the NETL master database (currently still under development)
+    Additionally, two inputs from the UKy flowsheet inventory are not available, namely: 1) oxalic acid and 2) D2EHPA
+    To address this data limitation, we compile inventory and develop UPs for the missing inputs in openLCA
+    The oxalic acid inventory is retrieved from ecoinvent database and the inventory for DEHPA is collected from the 
+    literature (https://doi.org/10.1016/j.resconrec.2022.106689)
+
+2- Regarding methods, a new method 'PrOMMiS Impact Assessment Method' is developed that encompasses several impact categories
+    - Acidification Potential - TRACI 2.1 (NETL)                    <- imported from TRACI 2.1
+    - Cumulative Energy Demand                                      <- developed by compiling all the characterization factors from the Federal LCA Commons CED method
+    - Cumulative Energy Demand - Non-renewable                      <- developed by only including the characterization factors for non-renewable resources
+    - Cumulative Energy Demand - renewable                          <- developed by only including the characterization factors for renewable resources
+    - Eutrophication Potential - TRACI 2.1 (NETL)                   <- imported from TRACI 2.1
+    - Global Warming Potential [AR4, 100 yr]                        <- imported from TRACI 2.1
+    - Global Warming Potential [AR4, 20 yr]                         <- imported from TRACI 2.1
+    - Global Warming Potential [AR5, 100 yr]                        <- imported from TRACI 2.1
+    - Global Warming Potential [AR5, 20 yr]                         <- imported from TRACI 2.1
+    - Global Warming Potential [AR6, 100 yr]                        <- imported from TRACI 2.1
+    - Global Warming Potential [AR6, 20 yr]                         <- imported from TRACI 2.1
+    - Ozone Depletion Potential - TRACI 2.1 (NETL)                  <- imported from TRACI 2.1
+    - Particulate Matter Formation Potential - TRACI 2.1 (NETL)     <-  imported from TRACI 2.1
+    - Photochemical Smog Formation Potential- TRACI 2.1 (NETL)      <- imported from TRACI 2.1
+    - Water Consumption (NETL)                                      <- developed by NETL - imported from TRACI 2.1 (NETL)
+
 
 Questions and future considerations
 ------------------------------------
@@ -164,10 +194,6 @@ system in openLCA and generating results. Information to add
     1- More information on impact assessment methods (100 yr vs 20 yr) and what they calculate
     2- Assumptions when using the JNB to create an LCA model
     3- Explaing system boundary and add SB figure 
-
-- Upload database on EDX
-    - create new workspace
-    - add files to it
 
 - Update error handling 
     - create_new_process.py 
