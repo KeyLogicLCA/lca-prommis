@@ -63,7 +63,7 @@ def main():
         DataFrame containing all extracted LCA flows with columns:
         ['Flow', 'Source', 'In/Out', 'Category', 'Value 1', 'Unit 1', 'Value 2', 'Unit 2']
     """
-    m, results = uky.main()
+    m, _ = uky.main()
     df = get_lca_df(m)
     df.to_csv("output/lca_df.csv")
     return df
