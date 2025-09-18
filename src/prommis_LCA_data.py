@@ -474,24 +474,24 @@ def get_lca_df(m):
     except Exception:
         print(f"Error: could not process acid feed 3 hydrochloric acid")
         
-    # 8. Process Sodium Hydroxide (Proxy Data)
-    # Estimate sodium hydroxide consumption based on NETL UP library ratios
-    # This chemical is used for pH adjustment during the leaching process
-    # Source: NETL UP library acid leaching unit process
-    try:
-        total_sulfuric = total_sulfuric_conc * safe_value(m.fs.leach_liquid_feed.flow_vol[0]) * units.mg/units.hr
-        naoh_in = value(units.convert(total_sulfuric * 0.478/1.17, 
-                                to_units=units.kg/units.hr))
-        flow.append("Sodium Hydroxide")
-        source.append("Acid Leaching")
-        in_out.append("In")
-        category.append("Chemicals")
-        value_1.append(naoh_in)
-        unit_1.append("kg/hr")
-        value_2.append("")
-        unit_2.append("")
-    except Exception:
-        print(f"Error: could not process acid leaching sodium hydroxide")
+    # # 8. Process Sodium Hydroxide (Proxy Data)
+    # # Estimate sodium hydroxide consumption based on NETL UP library ratios
+    # # This chemical is used for pH adjustment during the leaching process
+    # # Source: NETL UP library acid leaching unit process
+    # try:
+    total_sulfuric = total_sulfuric_conc * safe_value(m.fs.leach_liquid_feed.flow_vol[0]) * units.mg/units.hr
+    #     naoh_in = value(units.convert(total_sulfuric * 0.478/1.17, 
+    #                             to_units=units.kg/units.hr))
+    #     flow.append("Sodium Hydroxide")
+    #     source.append("Acid Leaching")
+    #     in_out.append("In")
+    #     category.append("Chemicals")
+    #     value_1.append(naoh_in)
+    #     unit_1.append("kg/hr")
+    #     value_2.append("")
+    #     unit_2.append("")
+    # except Exception:
+    #     print(f"Error: could not process acid leaching sodium hydroxide")
     
     # 9. Process Oxalic Acid (Proxy Data)
     # Estimate oxalic acid consumption based on NETL UP library ratios
