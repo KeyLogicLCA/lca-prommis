@@ -7,3 +7,4 @@ import src.run_analysis as run_analysis
 import src.generate_total_results as generate_total_results
 import src.generate_contribution_tree as generate_contribution_tree
 import src.import_db as import_db
+import src.plot_results as plot_results

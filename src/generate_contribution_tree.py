@@ -32,7 +32,7 @@ import olca_ipc
 from olca_ipc import utree
 import re
 
-def generate_contribution_tree(result, max_expand_levels, max_expand_nodes):
+def generate_contribution_tree(result, max_expand_levels, max_expand_nodes, download_results):
     """
     This function generates the results contribution tree for each impact category. 
     The function returns a dataframe for each impact category within the impact assessment method used.
@@ -42,6 +42,7 @@ def generate_contribution_tree(result, max_expand_levels, max_expand_nodes):
     result : result object
     max_expand_levels : int
     max_expand_nodes : int
+    download_results : bool
     
     Returns
     -------
@@ -78,7 +79,8 @@ def generate_contribution_tree(result, max_expand_levels, max_expand_nodes):
         # generate clean file name
         filename = re.sub(r'[<>:"/\\|?*]', "_", str(impact_category_name))
         # export the results to a csv file and store in output folder
-        df.to_csv(f"../output/{filename}.csv")
+        if download_results:
+            df.to_csv(f"../output/{filename}.csv")
         n+=1
         df_to_return = pd.concat([df_to_return, df])
     return df_to_return
