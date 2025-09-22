@@ -80,7 +80,7 @@ def generate_contribution_tree(result, max_expand_levels, max_expand_nodes, down
         filename = re.sub(r'[<>:"/\\|?*]', "_", str(impact_category_name))
         # export the results to a csv file and store in output folder
         if download_results:
-            df.to_csv(f"../output/{filename}.csv")
+            df.to_csv(f"output/{filename}.csv")
         n+=1
         df_to_return = pd.concat([df_to_return, df])
     return df_to_return
@@ -90,7 +90,7 @@ def generate_contribution_tree(result, max_expand_levels, max_expand_nodes, down
 # Note: this function has been imported from 
 # "https://greendelta.github.io/openLCA-ApiDoc/results/impacts/upstream_trees.html" 
 # and modified as shown below; the original method printed the result but ddnt return it
-def expand(node: utree.Node, level: int, max_expand_levels, max_expand_nodes):
+def expand(node: utree.Node, level: int, max_expand_levels: int, max_expand_nodes: int):
     results = []
     indent = (level, node.provider.name, node.result, node.direct_contribution) 
     results.append(indent)
