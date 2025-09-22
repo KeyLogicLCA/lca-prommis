@@ -186,6 +186,17 @@ Questions and future considerations
     processes producing co-products/by-products, this becomes exponentially more complex to 
     solve - but definitely doable)
 
+2- When creating processes, is it better to search for the process/
+provider and then select a flow? Or is it better to select a flow and then search for relevant
+providers (which is the current approach)?
+
+3- Potential improvement in the future: the user gets to see a list of impact assessment methods
+and select one for their analysis.
+
+4- In the process description step, we can ask the user to enter different LCA descriptors and 
+then combine those to form the process description. This ensures the process has all the necessary 
+information: goal, scope, functional unit, assumptions, etc. 
+
 Next updates (09/15/2025)
 ------------------------------------
 
