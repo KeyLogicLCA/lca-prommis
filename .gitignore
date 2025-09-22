@@ -3,8 +3,11 @@
 .ipynb_checkpoints
 *.pyc
 __pycache__
-output
+
 personal_notes.txt
+output/
+output/lca_df.csv
+
 
 # Ignore all sphynx documentation stuff
 docs
