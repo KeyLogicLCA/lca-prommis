@@ -255,6 +255,13 @@ def finalize_df(df: pd.DataFrame,
             except Exception as e:
                 print(f'Error generating UUID for {flow_name}: {e}')
         
+        # Convert Heat flows to Natural Gas flows
+        if flow_type == "Heat" or flow_name == "Heat":
+            flow_name = "Natural Gas"
+            flow_type = "Heat"
+            lca_unit = "m3"
+            lca_amount = lca_amount / 37.3
+        
         finalized_data.append({
             'Flow_Name': flow_name,
             'LCA_Amount': lca_amount,
