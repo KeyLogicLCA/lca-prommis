@@ -197,6 +197,18 @@ and select one for their analysis.
 then combine those to form the process description. This ensures the process has all the necessary 
 information: goal, scope, functional unit, assumptions, etc. 
 
+5- dislpay units in the list of flows 
+
+6- enable modifying flow unit (in lca_df_finalized) and adding conversion parameters 
+where needed when creating a flow (e.g., natural gas - from MJ to kg)
+
+Needed improvements
+------------------------------------
+
+1- Not all units are captured
+2- change natural gas unit (and consequently the amount) from MJ to kg 
+(kg natural gas burned to produce x MJ)
+
 Next updates (09/15/2025)
 ------------------------------------
 
