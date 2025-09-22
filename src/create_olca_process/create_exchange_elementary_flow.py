@@ -42,7 +42,7 @@ def create_exchange_elementary_flow(client, flow_uuid, unit, amount, is_input) -
 	# flow.flow_properties is a list of FlowPropertyFactors
 	# we want the one that is_ref_flow_property = true
 	factor = next((f for f in flow.flow_properties if f.is_ref_flow_property), flow.flow_properties[0])
-	flow_property = client.query(olca.FlowProperty, factor.flow_property.id)
+	flow_property = o_units.property_ref(unit)
 	if flow_property is None:
 		raise ValueError("Failed to resolve FlowProperty for the given flow")
 
