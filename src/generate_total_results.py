@@ -22,7 +22,7 @@ def generate_total_results(result):
     # Extract results - total impacts
     total_impacts = result.get_total_impacts()
     total_impacts_df = pd.DataFrame(total_impacts)
-    total_impacts_df.to_excel("total_impacts.xlsx", index=False)
+    total_impacts_df.to_excel("output/total_impacts.xlsx", index=False)
 
     return total_impacts_df
 
