@@ -210,8 +210,18 @@ Needed improvements
 mass, volume, and energy flow properties (for example).
 BUT: The issue with this approach is that some flows simply don't have that flow property. For example, 
 a chemical might only have a Mass flow property but the user inputs m3. This might create an error.
-FIX: check if flow properties of the selected flow include the unit-relevant flow property.
-If its not available, then: 1) either add flow property or 2) ask user to change unit. 
+    - FIX Approach 1: check if flow properties of the selected flow include the unit-relevant flow property.
+    If its not available, then: 1) either add flow property or 2) ask user to change unit. 
+
+    - FIX Approach 2: When the user searches for flows and selects a flow --> use function to check flow property 
+    (and potentially available units) for that flow and compare to unit that the user provided.
+    If the needed flow property is not available (basically the flow in openLCA cannot have the unit that the user provided)
+    Raise an error. The user would have two options: 1) skip flow 2) select another flow
+ 
+2- Step 4 - Add a note next to 'hour': the choice of hours would not affect the final result in step 5. 
+Everything will be normalized to a FU and the 'hour' will strike out 
+
+3- Some TRACI 2.1 impact categories are returning a null value. Review impact assessment method.
 
 Next updates (09/15/2025)
 ------------------------------------
