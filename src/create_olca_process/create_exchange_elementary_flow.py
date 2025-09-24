@@ -41,7 +41,6 @@ def create_exchange_elementary_flow(client, flow_uuid, unit, amount, is_input) -
 		# this would be the one that help define the unit of the flow (e.g., mass, volume, energy, etc.)
 	# flow.flow_properties is a list of FlowPropertyFactors
 	# we want the one that is_ref_flow_property = true
-	factor = next((f for f in flow.flow_properties if f.is_ref_flow_property), flow.flow_properties[0])
 	flow_property = o_units.property_ref(unit)
 	if flow_property is None:
 		raise ValueError("Failed to resolve FlowProperty for the given flow")
@@ -58,7 +57,7 @@ def create_exchange_elementary_flow(client, flow_uuid, unit, amount, is_input) -
 	exchange = client.make_exchange() 
 	exchange.flow = flow
 		# set the FlowProperty reference on the exchange
-	exchange.flow_property = flow_property.to_ref() if hasattr(flow_property, "to_ref") else flow_property
+	exchange.flow_property = flow_property
 	exchange.unit = o_units.unit_ref(unit)
 	exchange.amount = float(amount)
 	exchange.is_input = is_input
