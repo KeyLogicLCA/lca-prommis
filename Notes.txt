@@ -202,8 +202,8 @@ information: goal, scope, functional unit, assumptions, etc.
 6- enable modifying flow unit (in lca_df_finalized) and adding conversion parameters 
 where needed when creating a flow (e.g., natural gas - from MJ to kg)
 
-Needed improvements
-------------------------------------
+Needed improvements and other TODO's for the current deliverable (09/30/2025)
+-----------------------------------------------------------------------------
 
 1- Currently in the exchange creation functions, the flow property is created based on the unit provided by the user
 (e.g., if the user input kg, the Mass relevant flow property would be used). This works perfectly when a flow has 
@@ -221,21 +221,14 @@ a chemical might only have a Mass flow property but the user inputs m3. This mig
 2- Step 4 - Add a note next to 'hour': the choice of hours would not affect the final result in step 5. 
 Everything will be normalized to a FU and the 'hour' will strike out 
 
-3- Some TRACI 2.1 impact categories are returning a null value. Review impact assessment method.
+3- DANIEL: Update caustic solution and reducing agent amounts based on PSE team response
+            Only do so for Rougher SX
+            Some handy notes:   - use the full solvent volume (not the makeup), 
+                                - check out openLCA PrOMMiS db and see what chemical 
+                                strength (concentration) is available for NaOH and Ascorbic Acid
+                                we might need to add water to correct to the right strength provided by PSE
 
-Next updates (09/15/2025)
-------------------------------------
+4- DANIEL: PSE shared all their material/energy data from PrOMMiS - cross check with the data you extracted (this is just a validation step)
 
-- Update markup in Jupyter Notebook to explain better the process of creating a product 
-system in openLCA and generating results. Information to add
-    1- More information on impact assessment methods (100 yr vs 20 yr) and what they calculate
-    2- Assumptions when using the JNB to create an LCA model
-    3- Explaing system boundary and add SB figure 
-
-- Update error handling 
-    - create_new_process.py 
-        * improve error handling to make it more what the error is about 
-            for example, elementary flow uuid error is appearing right 
-            after reference product creation step
-
-        Possible Quick fix - add print statement before each step
+5- Quick fix in JNB: add the result.wait_until_ready()function to avoid exporting 
+results before the analysis is done
