@@ -25,6 +25,7 @@ try:
 except Exception as e:
     # Don't hard crash on import when reading the file; surface a clearer error later when used.
     olca = None  # type: ignore
+import olca_schema.units as o_units
 
 from netlolca import NetlOlca
 from src.create_olca_process.flow_search_function import search_Flows_by_keywords
@@ -110,6 +111,7 @@ def search_and_select(
     keywords: Optional[str] = None,
     flow_type_str: Optional[str] = None,
     client=None,
+    unit: Optional[str] = None,
 ) -> Tuple[Optional[str], Optional[str]]:
     """Search for a flow and (if applicable) a provider process.
 
@@ -176,6 +178,14 @@ def search_and_select(
     )
     if selected_flow_uuid is None:
         return (None, None)
+        
+    ids=[]
+    flow = client.query(olca.Flow, selected_flow_uuid)
+    flow_property = o_units.property_ref(unit)
+    for f in flow.flow_properties:
+        ids.append(f.flow_property.id)
+    if flow_property.id not in ids:
+        raise ValueError("The flow property is not found in the flow. Adjust your unit or select another flow")
 
     # 2) Find processes associated with the selected flow (producers/providers)
     proc_result = find_processes_by_flow(exchanges_df, selected_flow_uuid)

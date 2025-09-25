@@ -44,7 +44,11 @@ def create_exchange_elementary_flow(client, flow_uuid, unit, amount, is_input) -
 	flow_property = o_units.property_ref(unit)
 	if flow_property is None:
 		raise ValueError("Failed to resolve FlowProperty for the given flow")
-
+	ids=[]
+	for f in flow.flow_properties:
+		ids.append(f.flow_property.id)
+	if flow_property.id not in ids:
+		raise ValueError("The flow property is not found in the flow. Adjust your unit or select another flow")
 	# set unit
 	# if we pass the unit as a string, we need to resolve it to the unit object
 	# the reason why we have the _resolve_unit function 

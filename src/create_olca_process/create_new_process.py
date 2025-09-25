@@ -80,7 +80,7 @@ def create_new_process(client, df, process_name, process_description):
                     
                     # If product flow, then we need to search for a process 
                     elif row['Category'].lower() == 'technosphere flows' or row['Category'].lower() == 'product flows':
-                        flow_uuid, provider_uuid = search_and_select(exchanges_df=exchange_database, keywords=product, flow_type_str='product', client=client)
+                        flow_uuid, provider_uuid = search_and_select(exchanges_df=exchange_database, keywords=product, flow_type_str='product', client=client, unit=unit)
                         # Allows user to skip the flow
                         if flow_uuid == 'skip':
                             print(f"Skipping flow: {product}")
@@ -92,7 +92,7 @@ def create_new_process(client, df, process_name, process_description):
                     
                     # If waste flow, then we need to search for a process.
                     elif row['Category'].lower() == 'waste flows':
-                        flow_uuid, provider_uuid = search_and_select(exchanges_df=exchange_database, keywords=product, flow_type_str='waste', client=client)
+                        flow_uuid, provider_uuid = search_and_select(exchanges_df=exchange_database, keywords=product, flow_type_str='waste', client=client, unit=unit)
                         # Allows user to skip the flow
                         if flow_uuid == 'skip':
                             print(f"Skipping flow: {product}")
