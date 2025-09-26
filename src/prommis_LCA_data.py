@@ -478,39 +478,34 @@ def get_lca_df(m):
     # Estimate sodium hydroxide consumption based on report: 
     # https://www.osti.gov/servlets/purl/1569277
     # Their rougher extraction data: 
-    # kerosene = 622 L/hr, NaOH = 1.10 kg/hr, ascorbic acid = 0.18 kg/hr
+    # kerosene = 622 L/hr, Caustic Solution = 2.20 kg/hr, ascorbic acid = 0.18 kg/hr
     # Our data: kerosene = 6.201 L/hr in, but with 90% recycle ratio
     # This means the throughput of kerosene is 6.201 / 0.1 = 62.01 L/hr
-    # Using the ratio from the report, we can calculate the NaOH and ascorbic acid consumption
-    # NaOH stream = 50%, so will also add 50% water
+    # Using the ratios from the report, we can calculate the chemical consumption
+    # We will also assume that the same ratios apply to the cleaner circuit
+    
+    # 50% Caustic solution modeled with this process in openLCA:
+    # Sodium hydroxide; chlor-alkali average, membrane cell; at plant; 50% solution state.
     try:
-        ratio = rougher_org_vol*10 / 622
-        naoh_in = ratio * 1.10
-        naoh_water_in = naoh_in
+        ratio = (rougher_org_vol + cleaner_org_vol) * 10 / 622
+        caustic_solution_in = ratio * 2.20 # 50% caustic solution
         
-        flow.append("Sodium Hydroxide")
+        flow.append("50% Caustic Solution")
         source.append("Caustic Solution")
         in_out.append("In")
         category.append("Chemicals")
-        value_1.append(naoh_in)
-        unit_1.append("kg/hr")
-        value_2.append("")
-        unit_2.append("")
-        
-        flow.append("Water")
-        source.append("Caustic Solution")
-        in_out.append("In")
-        category.append("Water")
-        value_1.append(naoh_water_in)
+        value_1.append(caustic_solution_in)
         unit_1.append("kg/hr")
         value_2.append("")
         unit_2.append("")
     except Exception:
-        print(f"Error: could not process sodium hydroxide")
+        print(f"Error: could not process caustic solution")
     
-    # Ascorbic Acid stream = 10%, so will also add 90% water
+    # Ascorbic acid stream = 10%, so will also add 90% water
+    # Ascorbic acid modeled with this process in openLCA (from ecoinvent v3.11):
+    # Ascorbic acid {GLO}| market for ascorbic acid | Cut-off, S
     try:
-        ratio = rougher_org_vol*10 / 622
+        ratio = (rougher_org_vol + cleaner_org_vol) * 10 / 622
         ascorbic_in = ratio * 0.18
         ascorbic_water_in = ascorbic_in * 9
         
