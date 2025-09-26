@@ -158,20 +158,18 @@ the PrOMMiS UKy flowsheet.
     literature (https://doi.org/10.1016/j.resconrec.2022.106689)
 
 2- Regarding methods, a new method 'PrOMMiS Impact Assessment Method' is developed that encompasses several impact categories
-    - Acidification Potential - TRACI 2.1 (NETL)                    <- imported from TRACI 2.1
+    - Acidification Potential                                       <- imported from TRACI 2.1
     - Cumulative Energy Demand                                      <- developed by compiling all the characterization factors from the Federal LCA Commons CED method
     - Cumulative Energy Demand - Non-renewable                      <- developed by only including the characterization factors for non-renewable resources
     - Cumulative Energy Demand - renewable                          <- developed by only including the characterization factors for renewable resources
-    - Eutrophication Potential - TRACI 2.1 (NETL)                   <- imported from TRACI 2.1
-    - Global Warming Potential [AR4, 100 yr]                        <- imported from TRACI 2.1
-    - Global Warming Potential [AR4, 20 yr]                         <- imported from TRACI 2.1
-    - Global Warming Potential [AR5, 100 yr]                        <- imported from TRACI 2.1
-    - Global Warming Potential [AR5, 20 yr]                         <- imported from TRACI 2.1
+    - Eutrophication Potential                                      <- imported from TRACI 2.1
     - Global Warming Potential [AR6, 100 yr]                        <- imported from TRACI 2.1
     - Global Warming Potential [AR6, 20 yr]                         <- imported from TRACI 2.1
-    - Ozone Depletion Potential - TRACI 2.1 (NETL)                  <- imported from TRACI 2.1
-    - Particulate Matter Formation Potential - TRACI 2.1 (NETL)     <-  imported from TRACI 2.1
-    - Photochemical Smog Formation Potential- TRACI 2.1 (NETL)      <- imported from TRACI 2.1
+    - Human Health - cancer                                         <- imported from TRACI 2.1
+    - Human Health - non-cancer                                     <- imported from TRACI 2.1
+    - Human Health - particulate matter                             <- imported from TRACI 2.1
+    - Ozone Depletion Potential                                     <- imported from TRACI 2.1
+    - Smog Formation Potential                                      <- imported from TRACI 2.1
     - Water Consumption (NETL)                                      <- developed by NETL - imported from TRACI 2.1 (NETL)
 
 
@@ -213,3 +211,5 @@ Needed improvements and other TODO's for the current deliverable (09/30/2025)
                                 we might need to add water to correct to the right strength provided by PSE
 
 2- DANIEL: PSE shared all their material/energy data from PrOMMiS - cross check with the data you extracted (this is just a validation step)
+
+3- Update db in EDX
