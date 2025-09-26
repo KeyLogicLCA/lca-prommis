@@ -262,7 +262,7 @@ def get_lca_df(m):
         except Exception:
             print(f"Error: could not process solid feed {flow_name}")
     
-    print(f"REE mass in: {reo_mass_in} kg/hr")
+    print(f"REO mass in: {reo_mass_in} kg/hr")
     
     # 2. Process Liquid Feed Components
     # Extract water and acid concentrations from the leach liquid feed stream
@@ -474,33 +474,75 @@ def get_lca_df(m):
     except Exception:
         print(f"Error: could not process acid feed 3 hydrochloric acid")
         
-    # # 8. Process Sodium Hydroxide (Proxy Data)
-    # # Estimate sodium hydroxide consumption based on NETL UP library ratios
-    # # This chemical is used for pH adjustment during the leaching process
-    # # Source: NETL UP library acid leaching unit process
-    # try:
-    total_sulfuric = total_sulfuric_conc * safe_value(m.fs.leach_liquid_feed.flow_vol[0]) * units.mg/units.hr
-    #     naoh_in = value(units.convert(total_sulfuric * 0.478/1.17, 
-    #                             to_units=units.kg/units.hr))
-    #     flow.append("Sodium Hydroxide")
-    #     source.append("Acid Leaching")
-    #     in_out.append("In")
-    #     category.append("Chemicals")
-    #     value_1.append(naoh_in)
-    #     unit_1.append("kg/hr")
-    #     value_2.append("")
-    #     unit_2.append("")
-    # except Exception:
-    #     print(f"Error: could not process acid leaching sodium hydroxide")
+    # 8. Process Sodium Hydroxide and Ascorbic Acid (Report Proxy Data)
+    # Estimate sodium hydroxide consumption based on report: 
+    # https://www.osti.gov/servlets/purl/1569277
+    # Their rougher extraction data: 
+    # kerosene = 622 L/hr, NaOH = 1.10 kg/hr, ascorbic acid = 0.18 kg/hr
+    # Our data: kerosene = 6.201 L/hr in, but with 90% recycle ratio
+    # This means the throughput of kerosene is 6.201 / 0.1 = 62.01 L/hr
+    # Using the ratio from the report, we can calculate the NaOH and ascorbic acid consumption
+    # NaOH stream = 50%, so will also add 50% water
+    try:
+        ratio = rougher_org_vol*10 / 622
+        naoh_in = ratio * 1.10
+        naoh_water_in = naoh_in
+        
+        flow.append("Sodium Hydroxide")
+        source.append("Caustic Solution")
+        in_out.append("In")
+        category.append("Chemicals")
+        value_1.append(naoh_in)
+        unit_1.append("kg/hr")
+        value_2.append("")
+        unit_2.append("")
+        
+        flow.append("Water")
+        source.append("Caustic Solution")
+        in_out.append("In")
+        category.append("Water")
+        value_1.append(naoh_water_in)
+        unit_1.append("kg/hr")
+        value_2.append("")
+        unit_2.append("")
+    except Exception:
+        print(f"Error: could not process sodium hydroxide")
     
-    # 9. Process Oxalic Acid (Proxy Data)
+    # Ascorbic Acid stream = 10%, so will also add 90% water
+    try:
+        ratio = rougher_org_vol*10 / 622
+        ascorbic_in = ratio * 0.18
+        ascorbic_water_in = ascorbic_in * 9
+        
+        flow.append("Ascorbic Acid")
+        source.append("Reducing Agent Solution")
+        in_out.append("In")
+        category.append("Chemicals")
+        value_1.append(ascorbic_in)
+        unit_1.append("kg/hr")
+        value_2.append("")
+        unit_2.append("")
+        
+        flow.append("Water")
+        source.append("Reducing Agent Solution")
+        in_out.append("In")
+        category.append("Water")
+        value_1.append(ascorbic_water_in)
+        unit_1.append("kg/hr")
+        value_2.append("")
+        unit_2.append("")
+    except Exception:
+        print(f"Error: could not process ascorbic acid")
+    
+    # 9. Process Oxalic Acid (NETL UP Library Proxy Data)
     # Estimate oxalic acid consumption based on NETL UP library ratios
     # This chemical is used for REE precipitation and oxide formation
-    # Source: NETL UP library REE oxide formation unit process
-    # TODO: Move this calculation to EDX and clean up the spreadsheet
-    # https://mykeylogic.sharepoint.com/:x:/r/sites/KL_PRJ_LCA-2300.203.014REEPreliminaryAssessment/_layouts/15/Doc.aspx?sourcedoc=%7BAD82A6A7-95D8-4408-B4E9-3ADB9E7024C8%7D&file=NETL%20UP%20Library%20Case%20Study%20Inventory.xlsx&action=default&mobileredirect=true
+    # Source: NETL UP library REE oxide formation unit processes
+    # TODO: Move this calculation to EDX
+    # https://mykeylogic.sharepoint.com/:x:/s/KL_PRJ_LCA-2300.203.014REEPreliminaryAssessment/EVyLuoF3DApOqNh32ieNadEBC-Ec0TJGwbZXHbz_Bzf-3A?e=f0QuDP
     # See cells O3:P5
     try:
+        total_sulfuric = total_sulfuric_conc * safe_value(m.fs.leach_liquid_feed.flow_vol[0]) * units.mg/units.hr
         oxalic_in = value(units.convert(total_sulfuric * 0.762/1.728723404, 
                                 to_units=units.kg/units.hr))
         flow.append("Oxalic Acid")
@@ -512,7 +554,7 @@ def get_lca_df(m):
         value_2.append("")
         unit_2.append("")
     except Exception:
-        print(f"Error: could not process precipitation oxalic acid")
+        print(f"Error: could not process oxalic acid")
     
     # 10. Process Electricity Consumption
     # Extract electrical power requirements from various mixing operations
@@ -598,7 +640,18 @@ def get_lca_df(m):
     except Exception:
         print(f"Error: could not process roaster product")
     
-    print(f'REE mass out: {reo_mass_out} kg/hr')
+    print(f'REO mass out: {reo_mass_out} kg/hr')
+    print(f'Total product mass out: {product_mass} kg/hr')
+    product_purity = reo_mass_out / product_mass
+    
+    flow.append(f'Impurities')
+    source.append("Roaster Product")
+    in_out.append("Out")
+    category.append("Solid Output")
+    value_1.append(product_mass)
+    unit_1.append("kg/hr")
+    value_2.append((1-product_purity))
+    unit_2.append("mass fraction")
     
     # 13. Process Gas Emissions from Roaster
     # Extract gas composition and flow rates from the roaster emissions
@@ -696,7 +749,7 @@ def get_lca_df(m):
         'Unit 2': unit_2
     })
     
-    print(f'Product purity: {reo_mass_out / value(units.convert(m.fs.roaster.flow_mass_product[0], to_units=units.kg / units.hr)) * 100}%')
+    print(f'Product purity: {product_purity * 100}%')
     print(f'Recovery: {reo_mass_out / reo_mass_in * 100}%')
     
     return df
@@ -705,9 +758,4 @@ def get_lca_df(m):
 if __name__ == "__main__":
     df = main()
     print(df)
-    warn(
-        "Recent changes to this UKy flowsheet have made the underlying process more realistic, but the REE recovery values have fallen as a result."
-    )
-    warn(
-        "Efforts are ongoing to increase the REE recovery while keeping the system as realistic as possible. https://github.com/prommis/prommis/issues/152 in the PrOMMiS repository is tracking the status of this issue."
-    )
+    
