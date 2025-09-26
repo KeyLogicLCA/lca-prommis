@@ -87,7 +87,7 @@ context_mapping = {
 }
 
 # Example usage
-def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Roaster Product', water_type: str = 'raw fresh water'):
+def main(reference_flow: str = '73.4% REO Product', reference_source: str = 'Roaster Product', water_type: str = 'raw fresh water'):
     """
     Main function to demonstrate the complete LCA flows processing workflow.
     
@@ -95,7 +95,7 @@ def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Ro
     LCA flows to functional units. It performs the following steps:
     1. Loads the converted LCA DataFrame
     2. Merges REO feed flows into a single 374 ppm REO Feed
-    3. Merges roaster product flows into a 99.85% REO Product
+    3. Merges roaster product flows into a 73.4% REO Product
     4. Consolidates wastewater and solid waste flows
     5. Finalizes the DataFrame with proper categorization and UUIDs
     6. Saves the result and provides a summary
@@ -103,7 +103,7 @@ def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Ro
     Parameters
     ----------
     reference_flow : str, optional
-        Name of the reference flow for functional unit conversion (default: '99.85% REO Product')
+        Name of the reference flow for functional unit conversion (default: '73.4% REO Product')
     reference_source : str, optional
         Source of the reference flow (default: 'Roaster Product')
     water_type : str, optional
@@ -137,7 +137,7 @@ def main(reference_flow: str = '99.85% REO Product', reference_source: str = 'Ro
     # This 374 ppm value is directly calculated from the flowsheet. The original study actually used 357 ppm as the feed concentration.
     
     # Run the merge_flows function for the product
-    df = merge_flows(df, merge_source='Roaster Product', new_flow_name='99.85% REO Product')
+    df = merge_flows(df, merge_source='Roaster Product', new_flow_name='73.4% REO Product')
     
     # Run the merge_flows function for the liquid waste flows
     df = merge_flows(df, merge_source='Wastewater', new_flow_name='Wastewater', merge_column='Category') 
@@ -851,7 +851,7 @@ def get_finalize_summary(df: pd.DataFrame) -> dict:
   
 if __name__ == "__main__":
     # Run example usage
-    finalized_df = main(reference_flow='99.85% REO Product', reference_source='Roaster Product', water_type='raw fresh water')
+    finalized_df = main(reference_flow='73.4% REO Product', reference_source='Roaster Product', water_type='raw fresh water')
     print("Finalized DataFrame:")
     print(finalized_df)
     print("\n" + "="*60 + "\n")

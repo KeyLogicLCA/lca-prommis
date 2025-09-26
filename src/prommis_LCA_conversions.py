@@ -298,11 +298,6 @@ def convert_flows_to_lca_units(df, hours=1, mol_to_kg=True, water_unit='m3'):
                     new_unit = 'm3'
                     val /= 1000
             
-            # Wastewater is only accepted as kg typically
-            elif 'wastewater' in category.lower():
-                val = value(converted_expression)
-                new_unit = 'kg'
-            
             # Convert molar flows to mass using molecular weights from PubChem
             # This enables consistent mass-based LCA analysis
             elif 'mol' in unit1.lower() and mol_to_kg:
