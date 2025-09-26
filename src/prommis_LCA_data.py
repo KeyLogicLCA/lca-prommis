@@ -595,7 +595,8 @@ def get_lca_df(m):
                 if source_name == "Roaster":
                     heat_val = safe_value(heat_var[0])
                 else:
-                    heat_val = safe_value(heat_var.duty)
+                    heat_val = safe_value(heat_var.duty) * units.MBTU/units.hr
+                    heat_val = value(units.convert(heat_val, to_units=units.W))
                 
                 flow.append("Heat")
                 source.append(source_name)
