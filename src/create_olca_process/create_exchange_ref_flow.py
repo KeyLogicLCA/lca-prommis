@@ -82,13 +82,17 @@ def create_exchange_ref_existing_flow(client, flow_uuid, amount, unit):
     factor = next((f for f in flow.flow_properties if f.is_ref_flow_property), flow.flow_properties[0])
     flow_property = o_units.property_ref(unit)
     if flow_property is None:
-        raise ValueError("Failed to resolve FlowProperty for the given flow")
+        flow_property = o_units.property_ref(unit.lower())
+    if flow_property is None:
+        raise ValueError("The flow property is not found in the flow. Adjust your unit or select another flow")
     
     # create exchange
     exchange = client.make_exchange()
     exchange.flow = flow
     exchange.flow_property = flow_property.to_ref() if hasattr(flow_property, "to_ref") else flow_property
     exchange.unit = o_units.unit_ref(unit)
+    if exchange.unit is None:
+        exchange.unit = o_units.unit_ref(unit.lower())
     exchange.amount = amount
     exchange.is_input = False
     exchange.is_quantitative_reference = True
@@ -101,6 +105,8 @@ def create_exchange_ref_existing_flow(client, flow_uuid, amount, unit):
 def create_exchange_ref_new_flow(client, flowName, amount, unit, isInput, isRef):
     # get unit object from unit name passed in the function
     unit_obj = o_units.unit_ref(unit)
+    if unit_obj is None:
+        unit_obj = o_units.unit_ref(unit.lower())
     
     # Find a flow property that contains this unit
     flow_property = find_flow_property_for_unit(client, unit_obj)
