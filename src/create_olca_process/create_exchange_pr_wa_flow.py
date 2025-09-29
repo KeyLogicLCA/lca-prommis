@@ -50,13 +50,17 @@ def create_exchange_pr_wa_flow(client, flow_uuid, provider_uuid, amount, unit, i
     # Get reference flow property
     flow_property = o_units.property_ref(unit)
     if flow_property is None:
-        raise ValueError("Failed to resolve FlowProperty for the given flow")
+        flow_property = o_units.property_ref(unit.lower())
+    if flow_property is None:
+        raise ValueError("The flow property is not found in the flow. Adjust your unit or select another flow")
     
     # create exchange
     exchange = client.make_exchange()
     exchange.flow = flow
     exchange.flow_property = flow_property
     exchange.unit = o_units.unit_ref(unit)
+    if exchange.unit is None:
+        exchange.unit = o_units.unit_ref(unit.lower())
     exchange.amount = float(amount)
     exchange.is_input = is_input
     exchange.default_provider = olca.Ref.from_dict({"@type": "Process", "@id": provider_uuid})

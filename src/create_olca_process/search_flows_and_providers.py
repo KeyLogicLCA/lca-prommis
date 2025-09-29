@@ -182,9 +182,9 @@ def search_and_select(
     ids=[]
     flow = client.query(olca.Flow, selected_flow_uuid)
     flow_property = o_units.property_ref(unit)
-    for f in flow.flow_properties:
-        ids.append(f.flow_property.id)
-    if flow_property.id not in ids:
+    if flow_property is None:
+        flow_property = o_units.property_ref(unit.lower())
+    if flow_property is None:
         raise ValueError("The flow property is not found in the flow. Adjust your unit or select another flow")
 
     # 2) Find processes associated with the selected flow (producers/providers)
