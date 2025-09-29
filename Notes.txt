@@ -203,13 +203,4 @@ where needed when creating a flow (e.g., natural gas - from MJ to kg)
 Needed improvements and other TODO's for the current deliverable (09/30/2025)
 -----------------------------------------------------------------------------
 
-1- DANIEL: Update caustic solution and reducing agent amounts based on PSE team response
-            Only do so for Rougher SX
-            Some handy notes:   - use the full solvent volume (not the makeup), 
-                                - check out openLCA PrOMMiS db and see what chemical 
-                                strength (concentration) is available for NaOH and Ascorbic Acid
-                                we might need to add water to correct to the right strength provided by PSE
-
-2- DANIEL: PSE shared all their material/energy data from PrOMMiS - cross check with the data you extracted (this is just a validation step)
-
-3- Update db in EDX
+1- Update db in EDX

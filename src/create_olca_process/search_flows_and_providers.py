@@ -200,7 +200,7 @@ def search_and_select(
     if producers_df is None or len(producers_df) == 0:
         print("No provider processes found for the selected flow.")
         return (selected_flow_uuid, None)
-    print(producers_df)
+    #print(producers_df)
 
     proc_rows = []
     # Expected columns include 'process_name' and 'process_uuid'
