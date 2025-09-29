@@ -68,39 +68,65 @@ def create_new_process(client, df, process_name, process_description):
                 flow_uuid = row['UUID']
                 # TODO: add a check to see if there is more than one reference product. Just want to have a warning printed.
                 if row['Reference_Product']:
+                    print("\n")
+                    print(f"Creating exchange for reference product: {product}")
+                    print("----------------------------------------")
                     exchange = create_exchange_ref_flow(client, product, amount, unit, is_input, row['Reference_Product'])
                     exchanges.append(exchange)
                     break                     # If reference flow, then we don't need to search for a process.
                 else:
                     # If not elementary flow, the we need to identify flow category, search for a flow and process/provider to create an exchange
                     if row['Category'].lower() == 'elementary flows':
-                        exchange = create_exchange_elementary_flow(client, flow_uuid, unit, amount, is_input)
-                        exchanges.append(exchange)
-                        break  # If the flow is an elementary flow, the we create an exchange and move to the next row
+                        print("\n")
+                        print(f"Creating exchange for elementary flow: {product}")
+                        print("--------------------------------------")
+                        try:
+                            exchange = create_exchange_elementary_flow(client, flow_uuid, unit, amount, is_input)
+                            print(f"Exchange created for elementary flow: {product}")
+                            exchanges.append(exchange)
+                            break
+                        except Exception as e:
+                            print(f"Error creating exchange for elementary flow: {e}")
+                            break
                     
                     # If product flow, then we need to search for a process 
                     elif row['Category'].lower() == 'technosphere flows' or row['Category'].lower() == 'product flows':
+                        print("\n")
+                        print(f"Creating exchange for product flow: {product}")
+                        print("-----------------------------------")
                         flow_uuid, provider_uuid = search_and_select(exchanges_df=exchange_database, keywords=product, flow_type_str='product', client=client, unit=unit)
                         # Allows user to skip the flow
                         if flow_uuid == 'skip':
                             print(f"Skipping flow: {product}")
                             break
-                        
-                        exchange = create_exchange_pr_wa_flow(client, flow_uuid, provider_uuid, amount, unit, is_input)
-                        exchanges.append(exchange)
-                        break  # If the flow is an technosphere flow, the we create an exchange and move to the next row
+                        try:
+                            exchange = create_exchange_pr_wa_flow(client, flow_uuid, provider_uuid, amount, unit, is_input)
+                            print(f"Exchange created for product flow: {product}")
+                            exchanges.append(exchange)
+                            break
+                        except Exception as e:
+                            print(f"Error creating exchange for product flow: {e}")
+                            break
+                        # If the flow is an technosphere flow, the we create an exchange and move to the next row
                     
                     # If waste flow, then we need to search for a process.
                     elif row['Category'].lower() == 'waste flows':
+                        print("\n")
+                        print(f"Creating exchange for waste flow: {product}")
+                        print("---------------------------------")
                         flow_uuid, provider_uuid = search_and_select(exchanges_df=exchange_database, keywords=product, flow_type_str='waste', client=client, unit=unit)
                         # Allows user to skip the flow
                         if flow_uuid == 'skip':
                             print(f"Skipping flow: {product}")
                             break
-                        
-                        exchange = create_exchange_pr_wa_flow(client, flow_uuid, provider_uuid, amount, unit, is_input)
-                        exchanges.append(exchange)
-                        break  # If the flow is an waste flow, the we create an exchange and exit loop  
+                        try:
+                            exchange = create_exchange_pr_wa_flow(client, flow_uuid, provider_uuid, amount, unit, is_input)
+                            print(f"Exchange created for waste flow: {product}")
+                            exchanges.append(exchange)
+                            break
+                        except Exception as e:
+                            print(f"Error creating exchange for waste flow: {e}")
+                            break
                     else:
                         raise ValueError(f"Invalid category: {row['Category']}. Must be one of: elementary flows, product flows, technosphere flows, waste flows.")                    
             #Add handle errors if the row is missing a required column: product, amount, unit, is_input, reference_product, and/or category         

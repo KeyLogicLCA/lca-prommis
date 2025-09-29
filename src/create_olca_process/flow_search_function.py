@@ -98,13 +98,13 @@ def search_Flows_by_keywords(client, keywords: str, flow_type: Optional[olca.Flo
         if flow_type:
             print(f"Filtered to {len(matching_flows)} {flow_type.name} flows")
         
-        # Print clean list of flow names and UUIDs
-        print("\nMatching flows:")
-        print("-" * 80)
-        for i, flow in enumerate(matching_flows, 1):
-            print(f"{i:3d}. {flow.name}")
-            print(f"     UUID: {flow.id}")
-            print()
+        # # Print clean list of flow names and UUIDs
+        # print("\nMatching flows:")
+        # print("-" * 80)
+        # for i, flow in enumerate(matching_flows, 1):
+        #     print(f"{i:3d}. {flow.name}")
+        #     print(f"     UUID: {flow.id}")
+        #     print()
         
         # Create clean dataframe with just names and UUIDs
         clean_data = []
