@@ -1,9 +1,9 @@
 This document includes the development notes of the PrOMMiS LCA Integration code
 
 The flow includes 5 main tasks:
-1- Extract inputs/outputs from PrOMMiS 
+1- Extract inputs/outputs from PrOMMiS
 2- Communicate PrOMMiS resuts with openLCA
-3- Run openLCA model 
+3- Run openLCA model
 4- Extract openLCA results
 5- Pass openLCA results to PrOMMiS
 
@@ -15,12 +15,12 @@ This step is performed entirely in prommis_LCA_data.py
     ======================================================================
 In total, 17 material streams with 45 material flows were identified in addition to 4 electricity flows and 2 heat flows. 2 new flows were also added to reflect data from the NETL UP Library: sodium hydroxide and oxalic acid.
 
-    Step 1.2: Extract all flows/parameters and structure them in a dataframe 
+    Step 1.2: Extract all flows/parameters and structure them in a dataframe
     =========================================================================
 
 The end goal of this step is to have all relevant flows structured as follow:
 
-| Flow_ID | Flow        | In/Out |   Category   | Amount 1 | Unit 1 | Amount 2 | Unit 2 | 
+| Flow_ID | Flow        | In/Out |   Category   | Amount 1 | Unit 1 | Amount 2 | Unit 2 |
 |---------|-------------|--------|--------------|----------|--------|----------|--------|
 |    1    | Pump power  |   In   |  Electricity |  12      | kW     |          |        |
 |    2    | Li product  |   Out  |  Product     |  136     | kg/hr  |          |        |
@@ -34,15 +34,15 @@ Step 2: Communicate PrOMMiS results with openLCA
 
     Step 2.1: Develop function to convert PrOMMiS results to LCA-relevant results
     ============================================================================
-This step is performed in prommis_LCA_conversions.py. The main function in the script, convert_flows_to_lca_units, 
-adds two new columns to the dataframe from step 1: LCA Amount and LCA Unit (usually kg, m3, L, kWh, or MJ). This 
-function uses the Pyomo framework and a robust error-handling system to convert any common unit to LCA units. 
-It also uses pubchempy and pymatgen to convert moles to kg for any common chemical name. 
+This step is performed in prommis_LCA_conversions.py. The main function in the script, convert_flows_to_lca_units,
+adds two new columns to the dataframe from step 1: LCA Amount and LCA Unit (usually kg, m3, L, kWh, or MJ). This
+function uses the Pyomo framework and a robust error-handling system to convert any common unit to LCA units.
+It also uses pubchempy and pymatgen to convert moles to kg for any common chemical name.
 It returns the new df and creates a new csv file.
 
     Step 2.2: Develop function that evaluates PrOMMiS flows and converts them to LCA-relevant flows normalized to selected FU.
     =========================================================================================================================
-This step is performed in finalize_LCA_flows.py. The main() function utilizes the merge_flows and finalize_df functions to convert 
+This step is performed in finalize_LCA_flows.py. The main() function utilizes the merge_flows and finalize_df functions to convert
 the LCA information into a new dataframe which is ready to be imported into openLCA. The main function completes the following steps:
 
 1. Imports the LCA csv from the previous step
@@ -55,7 +55,7 @@ the LCA information into a new dataframe which is ready to be imported into open
     c. Combine identical flows into one value using the merge_duplicate_flows function
 4. Returns this new dataframe and creates a new csv file
 
-    Step 2.3: Pass converted PrOMMiS outputs to openLCA 
+    Step 2.3: Pass converted PrOMMiS outputs to openLCA
     ===================================================
 
     The code in this step involves several steps that mimic the process creation in openLCA
@@ -74,24 +74,24 @@ the LCA information into a new dataframe which is ready to be imported into open
             - then for each row in the given dataframe
                 - if the flow is ELEMENTARY_FLOW --> the function automatically creates an exchange for it using a predefined uuid
                     * Our work includes a dictionary for elementary flows in FEDEFL with their uuids
-                - if the flow is product or waste flow 
+                - if the flow is product or waste flow
                     * the user enters a keyword used to fetch given flows
                     * the user selects a flow from a given convert_flows_to_lca_units
                     * the function searches for processes that provide the given flow
                     * the user select a process
-                    * FUNCTION MOVES TO THE NEXT ROW 
+                    * FUNCTION MOVES TO THE NEXT ROW
         For all the steps above, the flow amount, unit, input/output are all retrieved from the given df generated in steps 2.1-2.2
-    
+
     #########################################################################
     # FOR FUTURE REFERENCE - TODO'S IN THE ABOVE STEPS
         High priority:
         --------------
         - Compile inventory for missing chemicals in our database and create processes for them
-        - [In Progress]: Create a impact assessment method that calculates GWP, CED, and Water consumption - and add it to the database 
-        
+        - [In Progress]: Create a impact assessment method that calculates GWP, CED, and Water consumption - and add it to the database
+
         Low priority:
         -------------
-        - Provide the user with the option of changing their keyword  
+        - Provide the user with the option of changing their keyword
 
     #########################################################################
 
@@ -105,7 +105,7 @@ we should create a calculationsetup object and then define its attributes:
     - impact_method --> if omitted, we don't get a LCIA but rather only a LCI
     - normalization and weighting set
     - parameters --> specific run parameter
-    - target: this is what we're calculating --> this takes a product system object 
+    - target: this is what we're calculating --> this takes a product system object
     - unit --> overrides FU
     - with_costs: includes cost calculation
     - with regionalization --> enables regionalized LCA
@@ -118,7 +118,7 @@ To run the analysis, the jupyter notebook user should use the run_analysis funct
 Here it's important to note that the method uuid will be pre-defined in the jupyter notebook.
 In this project we are attaching a openLCA database that contains:
     - the needed libraries/processes to evaluate the PrOMMiS flowsheets
-    - a impact assessment method that evaluates water consumption, CED, and global warming potential  
+    - a impact assessment method that evaluates water consumption, CED, and global warming potential
 
 Step 4: Extract openLCA results
 -------------------------------
@@ -127,16 +127,16 @@ Step 3 returns a result object that can be used to extract the LCIA results
 
 In this step two sets of results are extracted for each impact category (GWP, CED, WC)
     - Total impact: The total impacts are calculated using the generate_total_results function in the generate_total_results.py module.
-                    This function uses get_total_impacts() attribute of a olca_schema object 
+                    This function uses get_total_impacts() attribute of a olca_schema object
 
-    - Impacts by category:  This is also referred to as 'contribution tree' in openLCA. 
-                            To get the contribution tree, we use the generate_contribution_tree function from the generate_contribution_tree.py module 
+    - Impacts by category:  This is also referred to as 'contribution tree' in openLCA.
+                            To get the contribution tree, we use the generate_contribution_tree function from the generate_contribution_tree.py module
                             This method heavily relies on the utree module from olca_ipc library
                             This method requires the user to determine the number of nodes and levels.
                             Nodes are also referred to as the child nodes of a process like electricity, hear, sulfuric acid, etc. (e.g., impact by category)
                             Levels represent the number of step away from the main product.
                             Few important notes on this function and its application
-                                a- setting nodes to (-1) reports all the nodes possible --> should be recommended in the analysis 
+                                a- setting nodes to (-1) reports all the nodes possible --> should be recommended in the analysis
                                 b- setting levels to (1) reports the total impact for each node (no ramifications)
 
 
@@ -146,15 +146,15 @@ Step 5: Pass openLCA results to PrOMMiS
 
 Database Development notes
 --------------------------
-A database is developed with the required data and methods to create an openLCA model for 
+A database is developed with the required data and methods to create an openLCA model for
 the PrOMMiS UKy flowsheet.
 
 1- Regarding data, the following libraries are used:
-        - USLCI 
+        - USLCI
         - Separate UPs that are not found in the Federal LCA Commons are exported from the NETL master database (currently still under development)
     Additionally, two inputs from the UKy flowsheet inventory are not available, namely: 1) oxalic acid and 2) D2EHPA
     To address this data limitation, we compile inventory and develop UPs for the missing inputs in openLCA
-    The oxalic acid inventory is retrieved from ecoinvent database and the inventory for DEHPA is collected from the 
+    The oxalic acid inventory is retrieved from ecoinvent database and the inventory for DEHPA is collected from the
     literature (https://doi.org/10.1016/j.resconrec.2022.106689)
 
 2- Regarding methods, a new method 'PrOMMiS Impact Assessment Method' is developed that encompasses several impact categories
@@ -177,11 +177,11 @@ Questions and future considerations
 ------------------------------------
 1- Is hotspot analysis a part of the final outcome?
     If not then the current model structure is finalize_df
-    If yes, then this would require modeling the UKy flowsheet (for example) 
+    If yes, then this would require modeling the UKy flowsheet (for example)
     using process-based LCA rather than aggregating all the inventory in one unit process
-    In the second case (yes), we might need to do minor changes to the model structure to 
-    allow modeling each process unit separately (something to keep in mind: in the case of 
-    processes producing co-products/by-products, this becomes exponentially more complex to 
+    In the second case (yes), we might need to do minor changes to the model structure to
+    allow modeling each process unit separately (something to keep in mind: in the case of
+    processes producing co-products/by-products, this becomes exponentially more complex to
     solve - but definitely doable)
 
 2- When creating processes, is it better to search for the process/
@@ -191,16 +191,22 @@ providers (which is the current approach)?
 3- Potential improvement in the future: the user gets to see a list of impact assessment methods
 and select one for their analysis.
 
-4- In the process description step, we can ask the user to enter different LCA descriptors and 
-then combine those to form the process description. This ensures the process has all the necessary 
-information: goal, scope, functional unit, assumptions, etc. 
+4- In the process description step, we can ask the user to enter different LCA descriptors and
+then combine those to form the process description. This ensures the process has all the necessary
+information: goal, scope, functional unit, assumptions, etc.
 
-5- dislpay units in the list of flows 
+5- dislpay units in the list of flows
 
-6- enable modifying flow unit (in lca_df_finalized) and adding conversion parameters 
+6- enable modifying flow unit (in lca_df_finalized) and adding conversion parameters
 where needed when creating a flow (e.g., natural gas - from MJ to kg)
 
 Needed improvements and other TODO's for the current deliverable (09/30/2025)
 -----------------------------------------------------------------------------
 
 1- Update db in EDX
+
+---
+
+# CODE REVIEW
+1.  In create_olca_process submodule, there is some repetitious code
+    (e.g., `generate_id` and `_ensure_client` is found in several modules).
