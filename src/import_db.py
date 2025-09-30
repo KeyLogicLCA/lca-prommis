@@ -35,7 +35,10 @@ __all__ = [
 def import_db(resource_id):
     """Helper function to download a file from EDX to resources folder."""
     api_key = input("Enter your EDX API key: ")
-    resources_path = os.path.abspath(os.path.join(os.getcwd(), '../resources'))
+    # HOTFIX resource path [250930; TWD]
+    # NOTE: this resource path assumes working directory is the same as the
+    # Jupyter notebook.
+    resources_path = os.path.abspath(os.path.join(os.getcwd(), 'resources'))
     if not os.path.exists(resources_path):
         os.makedirs(resources_path)
     output_dir = resources_path
