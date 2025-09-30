@@ -1,7 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-search_flows.py
+#
+# search_flows_only.py
+#
+###############################################################################
+# DEPENDENCIES
+###############################################################################
+from typing import Optional, List
+import sys
+import logging
+
+try:
+    import olca_schema as olca
+except Exception as e:
+    # Don't hard crash on import when reading the file; surface a clearer error
+    # later when used.
+    olca = None
+
+from netlolca import NetlOlca
+from src.create_olca_process.flow_search_function import search_Flows_by_keywords
+from src.create_olca_process.create_exchange_database import create_exchange_database
+
+
+###############################################################################
+# DOCUMENTATION
+###############################################################################
+__doc__ = """
 
 Interactive search to:
   1) find a Flow by keyword and type (product, waste, elementary)
@@ -16,27 +40,23 @@ Relies on:
 You can import and call `search_and_select(...)` programmatically,
 or run this as a script for a CLI experience.
 """
-from typing import Optional, Tuple, Union, List
-import sys
-import logging
+__all__ = [
+    "main",
+    "search_and_select_flows",
+]
 
-try:
-    import olca_schema as olca  # type: ignore
-except Exception as e:
-    # Don't hard crash on import when reading the file; surface a clearer error later when used.
-    olca = None  # type: ignore
 
-from netlolca import NetlOlca
-from src.create_olca_process.flow_search_function import search_Flows_by_keywords
-from src.create_olca_process.find_processes_by_flow import find_processes_by_flow
-from src.create_olca_process.create_exchange_database import create_exchange_database
+###############################################################################
+# FUNCTIONS
+###############################################################################
 
 # -----------------------------------------------------------------------------
 # Utilities
 # -----------------------------------------------------------------------------
 
 def _ensure_client(existing_client=None):
-    """Return a connected olca client. Use the provided one if valid, else connect via NetlOlca."""
+    """Return a connected olca client. Use the provided one if valid, else
+    connect via NetlOlca."""
     if existing_client is not None:
         return existing_client
     netl = NetlOlca()
@@ -45,16 +65,27 @@ def _ensure_client(existing_client=None):
         raise RuntimeError("Failed to connect to openLCA via IPC. Is openLCA running with a database open?")
     return netl.client
 
-def _prompt_select(rows: List[dict], display_keys: List[str], uuid_key: str, prompt: str) -> Optional[str]:
+
+def _prompt_select(rows: List[dict],
+                   display_keys: List[str],
+                   uuid_key: str,
+                   prompt: str) -> Optional[str]:
     """Simple CLI selector over a list of dictionaries.
-    
-    Args:
-        rows: list of dicts to display
-        display_keys: keys to show in each row
-        uuid_key: key that contains the UUID to return
-        prompt: input prompt string
-    
-    Returns:
+
+    Parameters
+    ----------
+    rows : list
+        A list of dicts to display.
+    display_keys : list
+        A list of keys to show in each row.
+    uuid_key : str
+        A string that contains the UUID to return.
+    prompt : str
+        Input prompt.
+
+    Returns
+    -------
+    str
         The selected UUID string, or None if user aborts.
     """
     if not rows:
@@ -86,27 +117,38 @@ def _prompt_select(rows: List[dict], display_keys: List[str], uuid_key: str, pro
 # Core functionality
 # -----------------------------------------------------------------------------
 
-def search_and_select_flows(keywords,client):
-    """Search for a product flow 
+def search_and_select_flows(keywords, client):
+    """Search for a product flow.
 
-    Args:
-        exchanges_df: dataframe containing exchanges
-        keywords: keyword(s) to search flow names
-        client: optional pre-connected olca-ipc client
+    Parameters
+    ----------
+    keywords : str
+        A string with keyword(s) to search flow names.
+    client : NetlOlca
+        An optional pre-connected olca-ipc client.
 
-    Returns:
-        (flow_uuid)
+    Returns
+    -------
+    str
+        Flow UUID.
     """
     client = _ensure_client(client)
-    
+
     # If no keywords provided, prompt for them
     if keywords is None:
-        keywords = input("Enter flow name keyword(s). Type 'skip' to skip this flow. ").strip()
+        keywords = input(
+            "Enter flow name keyword(s). "
+            "Type 'skip' to skip this flow. "
+        ).strip()
     elif keywords.lower() == 'skip':
         return ('skip', None)
-    # If keywords provided, prompt, but allow user to press enter to use the default keywords
+    # If keywords provided, prompt, but allow user to press enter to use the
+    # default keywords
     else:
-        keywords_response = input(f"Enter flow name keyword(s). Type 'skip' to skip this flow. Press enter to use {keywords}: ").strip()
+        keywords_response = input(
+            "Enter flow name keyword(s). "
+            "Type 'skip' to skip this flow. "
+            f"Press enter to use {keywords}: ").strip()
         if len(keywords_response) == 0:
             keywords = keywords
         elif keywords_response.lower() == 'skip':
@@ -119,13 +161,16 @@ def search_and_select_flows(keywords,client):
         raise ValueError("No keywords provided.")
 
     # 1) Search for flows by keyword -- only report product flows
-    results = search_Flows_by_keywords(client, keywords, olca.FlowType.PRODUCT_FLOW)
+    results = search_Flows_by_keywords(
+        client, keywords, olca.FlowType.PRODUCT_FLOW
+    )
     if not results:
         print("No flows found matching the criteria.")
         return (None, None)
 
-    # Expect: matching_flows (list of olca.Flow), clean_df with ['Number','Flow_Name','UUID'], full_df
-    matching_flows, clean_df, full_df = results
+    # Expect: matching_flows (list of olca.Flow), clean_df with ['Number',
+    # 'Flow_Name','UUID'], full_df
+    _, clean_df, _ = results
 
     if clean_df is None or len(clean_df) == 0:
         print("No flows found matching the criteria.")
@@ -142,7 +187,9 @@ def search_and_select_flows(keywords,client):
 
     selected_flow_uuid = None
     selected_flow_uuid = _prompt_select(
-        rows, display_keys=["Flow_Name", "UUID"], uuid_key="UUID",
+        rows,
+        display_keys=["Flow_Name", "UUID"],
+        uuid_key="UUID",
         prompt="Select a flow"
     )
     if selected_flow_uuid is None:
@@ -163,7 +210,11 @@ def main(argv: Optional[List[str]] = None):
     argv = argv or sys.argv[1:]
     exchange_database = create_exchange_database(netl)
     try:
-        flow_uuid = search_and_select_flows(exchanges_df=exchange_database, keywords = None, client = netl)
+        flow_uuid = search_and_select_flows(
+            exchanges_df=exchange_database,
+            keywords=None,
+            client=netl,
+        )
         print("\nResult:")
         print(f"Flow UUID    : {flow_uuid}")
     except Exception as e:
@@ -171,6 +222,9 @@ def main(argv: Optional[List[str]] = None):
         print(f"Error: {e}")
 
 
+###############################################################################
+# FUNCTIONS
+###############################################################################
 if __name__ == "__main__":
     main()
 

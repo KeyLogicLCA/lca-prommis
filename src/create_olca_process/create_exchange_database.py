@@ -3,7 +3,6 @@
 #
 # create_exchange_database.py
 #
-#
 ###############################################################################
 # DEPENDENCIES
 ###############################################################################
@@ -15,8 +14,8 @@ import pandas as pd
 # DOCUMENTATION
 ###############################################################################
 __doc__ = """
-This script includes a function that searches the database (connected through
-IPC) for processes that produce or are associated with a given flow.
+This module has a function to create a data frame with all exchanges that are
+outputs and their respective process universally unique identifiers (UUIDs).
 
 **Code assumptions**
 
@@ -31,9 +30,10 @@ The function takes one main argument/input:
 
 1.  client object (IPC client)
 
-The function creates a database with all exchanges that are outputs and their respective process uuid.
-
 """
+__all__ = [
+    "create_exchange_database",
+]
 
 
 ###############################################################################
