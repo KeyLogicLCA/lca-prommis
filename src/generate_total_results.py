@@ -38,10 +38,20 @@ __all__ = [
 ###############################################################################
 # FUNCTIONS
 ###############################################################################
+def extract_impacts(ps):
+    return (ps['name'], ps['ref_unit'], ps['id'])
+
 def generate_total_results(result):
     # Extract results - total impacts
     total_impacts = result.get_total_impacts()
     total_impacts_df = pd.DataFrame(total_impacts)
-    total_impacts_df.to_excel("output/total_impacts.xlsx", index=False)
+    # Parse the name, units, and UUID from impact categories
+    total_impacts_df['temp'] = total_impacts_df['impact_category'].apply(extract_impacts)
+    total_impacts_df['name'] = total_impacts_df['temp'].str.get(0)
+    total_impacts_df['units'] = total_impacts_df['temp'].str.get(1)
+    total_impacts_df['uuid'] = total_impacts_df['temp'].str.get(2)
+    total_impacts_df = total_impacts_df.drop(columns=['temp', 'impact_category'])    
+    # Save results
+    total_impacts_df.to_csv("output/total_impacts.csv", index=False)
 
     return total_impacts_df
