@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from src.create_olca_process.create_exchange_database import create_exchange_database
 from src.create_olca_process.create_exchange_elementary_flow import create_exchange_elementary_flow
 from src.create_olca_process.create_exchange_pr_wa_flow import create_exchange_pr_wa_flow

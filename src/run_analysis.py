@@ -1,27 +1,46 @@
-# This script includes a function to run the analysis for a product system in openLCA
-
-# Code assumptions
-########################################################################################################
-    # The user has openLCA running with an open database
-    # The open database includes databases (e.g., databases imported by the user from LCACommons)
-    # The user is connected to the openLCA database through IPC
-    # The user already used the create_ps function to create a product system
-
-# Code logic
-########################################################################################################
-    # The function takes two main arguments/inputs:
-        # 1. client object (IPC client)
-        # 2. ps_uuid: the uuid of the product system
-
-    # The function returns the result
-
-# Dependencies
-########################################################################################################
-import pandas as pd
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# run_analysis.py
+#
+###############################################################################
+# DEPENDENCIES
+###############################################################################
 import olca_schema as olca
 
-# Main function
-########################################################################################################
+
+###############################################################################
+# DOCUMENTATION
+###############################################################################
+__doc__ = """
+This script includes a function to run the analysis for a product system in openLCA.
+
+**Assumptions**
+
+-   The user has openLCA running with an open database
+-   The open database includes databases (e.g., databases imported by the user
+    from LCACommons)
+-   The user is connected to the openLCA database through IPC
+-   The user already used the create_ps function to create a product system
+
+**Logic**
+
+The function takes two main arguments/inputs:
+
+1. client object (IPC client)
+2. ps_uuid: the uuid of the product system
+
+The function returns the result.
+
+"""
+__all__ = [
+    "run_analysis",
+]
+
+
+###############################################################################
+# FUNCTIONS
+###############################################################################
 def run_analysis(client, ps_uuid, impact_method_uuid):
     """
     This function runs the analysis for a product system in openLCA.
@@ -51,11 +70,11 @@ def run_analysis(client, ps_uuid, impact_method_uuid):
 
     # build the calculation setup
     setup = olca.CalculationSetup()
-    setup.allocation = olca.AllocationType.USE_DEFAULT_ALLOCATION  
+    setup.allocation = olca.AllocationType.USE_DEFAULT_ALLOCATION
     setup.amount = None # omitted, the code will use the FU
     setup.flow_property = None # omitted, the code will use the FU flow property
     setup.impact_method = impact_method_ref
-    setup.nw_set = None 
+    setup.nw_set = None
     setup.parameters = None # no parameters are considered in the current model
                             # this can be incorporated in the future
     setup.target = ps_ref

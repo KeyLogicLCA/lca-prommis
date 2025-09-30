@@ -1,46 +1,86 @@
-# This script includes the function to create exchanges for product/waste flows
-
-# Assumptions:
-###################################################################################
-# 1. The flow is a product or waste flow
-# 2. The user knows the uuids of the flow and its associated process
-# 3. the flow amount, unit, is_input, is_reference are extracted from the prommis results df
-
-# Code logic
-###################################################################################
-
-# 1. The function gets the flow using the provided uuid
-# 2. The function gets the reference flow property
-# 3. Use the make_exchange function to create the exchange
-# 4. assign flow to exchange
-# 5. assign flow property
-# 6. assign unit using the o_units from olca_schema.units --> string unit from prommis results df
-# 7. assign amount and is_input --> amount from prommis results df
-# 8. assign provider using the uuid of the process associated with the flow
-# 9. return the exchange
-
-# Import libraries
-###################################################################################
-import logging
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# create_exchange_pr_wa_flow.py
+#
+###############################################################################
+# DEPENDENCIES
+###############################################################################
 import olca_schema as olca
 import olca_schema.units as o_units
 
-# Main function
-def create_exchange_pr_wa_flow(client, flow_uuid, provider_uuid, amount, unit, is_input):
+
+###############################################################################
+# DOCUMENTATION
+###############################################################################
+__doc__ = """
+This script includes the function to create exchanges for product/waste flows.
+
+**Assumptions**
+
+-   The flow is a product or waste flow.
+-   The user knows the uuids of the flow and its associated process.
+-   The flow amount, unit, is_input, is_reference are extracted from the
+    prommis results data frame.
+
+**Logic**
+
+1.  The function gets the flow using the provided uuid
+2.  The function gets the reference flow property
+3.  Use the make_exchange function to create the exchange
+4.  Assign flow to exchange
+5.  Assign flow property
+6.  Assign unit using the o_units from olca_schema.units --> string unit from
+    prommis results df
+7.  Assign amount and is_input --> amount from prommis results df
+8.  Assign provider using the uuid of the process associated with the flow
+9.  Return the exchange
+"""
+__all__ = [
+    "create_exchange_pr_wa_flow",
+]
+
+
+###############################################################################
+# FUNCTIONS
+###############################################################################
+def create_exchange_pr_wa_flow(client,
+                               flow_uuid,
+                               provider_uuid,
+                               amount,
+                               unit,
+                               is_input):
     """
-    Create and return an 'olca.Exchange' for PRODUCT or WASTE flows
+    Create and return an 'olca.Exchange' for PRODUCT or WASTE flows.
 
     Parameters
     ----------
-    client : olca.Client - An olca client object.
-    flow_uuid : str - The uuid of the flow.
-    provider_uuid : str - The uuid of the process associated with the flow.
-    amount : float - The amount of the flow.
-    unit : str - The unit of the flow.
-    is_input : bool - Whether the flow is an input or output.
-    """
+    client : olca.Client
+        An olca client object.
+    flow_uuid : str
+        The uuid of the flow.
+    provider_uuid : str
+        The uuid of the process associated with the flow.
+    amount : float
+        The amount of the flow.
+    unit : str
+        The unit of the flow.
+    is_input : bool
+        Whether the flow is an input or output.
 
-    # Get flow and make additional checks - it exists and it is a product or waste flow
+    Returns
+    -------
+    olca-schema.Exchange
+        An Exchange object instance.
+
+    Raises
+    ------
+    ValueError
+        Failed to find flow or flow property in openLCA database or the flow
+        type is not an product or waste flow type.
+    """
+    # Get flow and make additional checks
+    # - it exists and it is a product or waste flow
     flow = client.query(olca.Flow, flow_uuid) # returns a olca.Flow object
     if flow is None:
         raise ValueError(f"Flow not found: {flow_uuid}")
@@ -52,9 +92,12 @@ def create_exchange_pr_wa_flow(client, flow_uuid, provider_uuid, amount, unit, i
     if flow_property is None:
         flow_property = o_units.property_ref(unit.lower())
     if flow_property is None:
-        raise ValueError("The flow property is not found in the flow. Adjust your unit or select another flow")
-    
-    # create exchange
+        raise ValueError(
+            "The flow property is not found in the flow. "
+            "Adjust your unit or select another flow"
+        )
+
+    # Create exchange.
     exchange = client.make_exchange()
     exchange.flow = flow
     exchange.flow_property = flow_property
@@ -63,6 +106,8 @@ def create_exchange_pr_wa_flow(client, flow_uuid, provider_uuid, amount, unit, i
         exchange.unit = o_units.unit_ref(unit.lower())
     exchange.amount = float(amount)
     exchange.is_input = is_input
-    exchange.default_provider = olca.Ref.from_dict({"@type": "Process", "@id": provider_uuid})
+    exchange.default_provider = olca.Ref.from_dict(
+        {"@type": "Process", "@id": provider_uuid}
+    )
 
     return exchange

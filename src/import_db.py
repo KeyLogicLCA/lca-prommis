@@ -1,17 +1,44 @@
-# This script includes a code that downloads an openLCA database from EDX
-
-# Source: https://github.com/NETL-RIC/ElectricityLCI/blob/71a3f6dd20ed36bfcea3ff64b5e27d117ca7adc5/electricitylci/utils.py#L517
-
-# Dependencies
-########################################################################################################
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# import_db.py
+#
+###############################################################################
+# DEPENDENCIES
+###############################################################################
 import requests
 import logging
 import os
 
 
+###############################################################################
+# DOCUMENTATION
+###############################################################################
+__doc__ = """
+This script includes a code that downloads an openLCA database from
+`EDX <http://edx.netl.doe.gov/>_`.
+
+Source:
+https://github.com/NETL-RIC/ElectricityLCI/blob/71a3f6dd20ed36bfcea3ff64b5e27d117ca7adc5/electricitylci/utils.py#L517
+
+"""
+__all__ = [
+    "check_output_dir",
+    "download_edx",
+    "import_db",
+]
+
+
+###############################################################################
+# FUNCTIONS
+###############################################################################
 def import_db(resource_id):
+    """Helper function to download a file from EDX to resources folder."""
     api_key = input("Enter your EDX API key: ")
-    resources_path = os.path.abspath(os.path.join(os.getcwd(), '../resources'))
+    # HOTFIX resource path [250930; TWD]
+    # NOTE: this resource path assumes working directory is the same as the
+    # Jupyter notebook.
+    resources_path = os.path.abspath(os.path.join(os.getcwd(), 'resources'))
     if not os.path.exists(resources_path):
         os.makedirs(resources_path)
     output_dir = resources_path
