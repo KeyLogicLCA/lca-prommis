@@ -10,6 +10,7 @@ The National Energy Technology Laboratory (NETL) GitHub project code is provided
 
     lca-prommis/
     ├── images/
+    │   ├── system_boundary_1.png
     │   └── uky_flowsheet.png
     │
     ├── output/
@@ -17,26 +18,26 @@ The National Energy Technology Laboratory (NETL) GitHub project code is provided
     │   ├── lca_df_converted.csv           <- Unit-converted and aggregated data
     │   └── lca_df_finalized.csv           <- Normalized to functional unit
     │
-    │
     ├── resources                          <- directory for openLCA database
     │                                         downloaded from EDX
     │
     ├── src/
-    │   ├── create_olca_process
+    │   ├── create_olca_process        <-  Submodule for creating unit processes
     │   │   ├── __init__.py
-    │   │   ├── create_new_process.py               <- main function to create new process in openLCA
     │   │   ├── create_exchange_elementary_flow.py  <- function to create an exchange for an elementary flow
     │   │   ├── create_exchange_pr_wa_flow.py       <- function to create an exchange for product and waste flows
     │   │   ├── create_exchange_database.py         <- function to create an exchange database
     │   │   ├── create_exchange_ref_flow.py         <- function to create an exchange for the quantitative reference
-    │   │   |                                              flow
+    │   │   │                                              flow
+    │   │   ├── create_new_process.py               <- main function to create new process in openLCA
     │   │   ├── find_processes_by_flow.py           <- function to query an openLCA database and find the
-    │   │   |                                              provider for specific flows
+    │   │   │                                              provider for specific flows
     |   │   ├── flow_search_function.py             <- function to query an openLCA database and find a flow by
-    │   │   |                                              keyword
-    │   │   ├── search_flows_only.py                <- user interface code to search and extract only flows
-    │   │   └── search_flows_and_providers.py       <- user interface code to search for flows and their associated
-    │   │                                                  providers
+    │   │   │                                              keyword
+    │   │   ├── search_flows_and_providers.py       <- user interface code to search for flows and their associated
+    │   │   │                                              providers
+    │   │   └── search_flows_only.py                <- user interface code to search and extract only flows
+    │   │
     │   ├── __init__.py
     │   ├── prommis_LCA_data.py                     <- code to run PrOMMiS model and extract data
     │   ├── prommis_LCA_conversions.py              <- code to convert PrOMMiS data to LCA relevant units
