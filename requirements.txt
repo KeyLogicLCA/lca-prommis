@@ -2,4 +2,5 @@ git+https://github.com/USEPA/Federal-LCA-Commons-Elementary-Flow-List#egg=fedele
 git+https://github.com/NETL-RIC/netlolca#egg=netlolca
 numpy
 pubchempy
-pymatgen.core
+pymatgen
+openpyxl
