@@ -1,31 +1,47 @@
-# This script includes a function that searches the database (connected through IPC)
-# for processes that produce or are associated with a given flow
-
-# Code assumptions
-########################################################################################################
-    # The user has openLCA running with an open database
-    # The open database includes databases (e.g., databases imported by the user from LCACommons)
-    # The user is connected to the openLCA database through IPC
-
-# Code logic
-########################################################################################################
-    # The function takes one main argument/input:
-        # 1. client object (IPC client)
-
-    # The function creates a database with all exchanges that are outputs and their respective process uuid
-
-# Dependencies
-########################################################################################################
-import olca_ipc
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# create_exchange_database.py
+#
+#
+###############################################################################
+# DEPENDENCIES
+###############################################################################
 import olca_schema as olca
-import netlolca
-from netlolca import NetlOlca
 import pandas as pd
 
-# Function to create database with all exchanges that are outputs and their respective process uuid
-########################################################################################################
 
+###############################################################################
+# DOCUMENTATION
+###############################################################################
+__doc__ = """
+This script includes a function that searches the database (connected through
+IPC) for processes that produce or are associated with a given flow.
+
+**Code assumptions**
+
+-   The user has openLCA running with an open database
+-   The open database includes databases (e.g., databases imported by the user
+    from LCACommons)
+-   The user is connected to the openLCA database through IPC
+
+**Logic**
+
+The function takes one main argument/input:
+
+1.  client object (IPC client)
+
+The function creates a database with all exchanges that are outputs and their respective process uuid.
+
+"""
+
+
+###############################################################################
+# FUNCTIONS
+###############################################################################
 def create_exchange_database(client):
+    """Create a data frame with all exchanges that are outputs and their
+    respective process universally unique identifiers."""
     # get all processes
     process_descriptors = client.get_descriptors(olca.Process)
 
@@ -36,7 +52,8 @@ def create_exchange_database(client):
         process = client.query(olca.Process, process.id)
         for exchange in process.exchanges:
             # Only include output exchanges that have a flow attached
-            if (not exchange.is_input) and getattr(exchange, 'flow', None) is not None:
+            if (not exchange.is_input
+                    and getattr(exchange, 'flow', None) is not None):
                 exchange_database.append({
                     'process_uuid': process.id,
                     'exchange_uuid': exchange.flow.id,
