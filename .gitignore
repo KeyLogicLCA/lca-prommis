@@ -11,3 +11,6 @@ output/lca_df.csv
 
 # Ignore all sphynx documentation stuff
 docs
+
+# Ignore development installation files
+src/lca_prommis.egg-info
