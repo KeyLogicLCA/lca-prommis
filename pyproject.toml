@@ -29,6 +29,7 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-# This tells setuptools to look inside the 'src' folder
-where = ["src"]
-include = ["create_olca_process*"]
+include = [
+    "lca_prommis",
+    "lca_prommis.create_olca_process"
+]
