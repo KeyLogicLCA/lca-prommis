@@ -25,6 +25,7 @@ from pyomo.environ import value
 
 import src as lca_prommis
 
+
 ##############################################################################
 # CLASSES
 ##############################################################################
@@ -266,20 +267,14 @@ class NetlFoqus(object):
 
     def init_uky(self):
         """
-        Initialize the UKy flowsheet.
-
-        Throws
-        ------
-        TypeError
-            If the producing_node or receiving_node is not a valid FOQUS node object
-        ValueError
-            If the exchanges table is not found
-
+        Create a FOQUS session with PrOMMiS and openLCA nodes that are
+        connected by an edge, then read the UKy exchange table and populate
+        the variable list.
 
         Returns
         -------
-        the UKy flosheet model
-        
+        ConcreteModel
+            The UKy flowsheet concrete model.
         """
         # Creates a session with ProMMiS and openLCA nodes connected by an edge.
         # Reads the UKy exchange table and populates the variable list.
@@ -299,11 +294,11 @@ class NetlFoqus(object):
         self.exchanges = my_df
 
         return my_cm
-    
+
     def set_input_variables(self, node, var_name, var_value, var_min, var_max):
         """
         Set the input variables for a given node.
-        
+
         Parameters
         ----------
         node : gr.Node
@@ -358,9 +353,15 @@ class NetlFoqus(object):
         if not isinstance(receiving_node, gr.Node):
             raise TypeError("receiving_node must be a valid FOQUS node object")
         for var_name in exchanges_names:
-            self.vars.append(nv.NodeVars(opvname=var_name, dtype = float).opvname)
-            self.exchanges_vars.append(nv.NodeVars(opvname=var_name, dtype = float))
-            value = self.exchanges.loc[self.exchanges['Flow_Name'] == var_name, 'LCA_Amount'].values[0]
+            self.vars.append(
+                nv.NodeVars(opvname=var_name, dtype=float).opvname
+            )
+            self.exchanges_vars.append(
+                nv.NodeVars(opvname=var_name, dtype=float)
+            )
+            value = self.exchanges.loc[
+                self.exchanges['Flow_Name'] == var_name, 'LCA_Amount'
+            ].values[0]
             self.exchanges_vars[-1].setValue(value)
             logging.info(
                 "Set output properties for %s: value=%f" % (var_name, value)
@@ -386,7 +387,7 @@ class NetlFoqus(object):
     def connect_intermediate_variables(self, node1, node2):
         """
         Connect the intermediate variables.
-        
+
         Parameters
         ----------
         node1 : gr.Node
@@ -405,11 +406,11 @@ class NetlFoqus(object):
             logging.info(
                 "Connected %s to %s" % (var_out, var_in)
             )
-    
+
     def initiate_output_variables(self, node, var_name, var_value):
         """
         Initiate an output variable for a given node.
-        
+
         Parameters
         ----------
         node : gr.Node
@@ -456,7 +457,7 @@ class NetlFoqus(object):
         """
         if not isinstance(node, gr.Node):
             raise TypeError("node must be a valid FOQUS node object")
-        
+
         node.pythonCode = script
         logging.info(
             "Defined script for node %s: script=%s" % (node.name, script)
@@ -465,7 +466,7 @@ class NetlFoqus(object):
     def set_node_scriptMode(self, node, script_mode):
         """
         Set the script mode for a given node.
-        
+
         Parameters
         ----------
         node : gr.Node
@@ -483,20 +484,20 @@ class NetlFoqus(object):
         """
         if not isinstance(node, gr.Node):
             raise TypeError("node must be a valid FOQUS node object")
-        
+
         if script_mode not in ['pre', 'total', 'post']:
             raise ValueError("script_mode must be either 'pre', 'total', or 'post'")
         node.scriptMode = script_mode
         logging.info(
             "Set script mode for node %s: script_mode=%s" % (node.name, script_mode)
         )
-        
+
     def run_standalone_node_script(self, node):
         """
         Run the script for a given node.
-        This will run the script as if the node 
+        This will run the script as if the node
         scriptMode is 'total'.
-        
+
         Parameters
         ----------
         node : gr.Node
@@ -506,23 +507,23 @@ class NetlFoqus(object):
             raise TypeError("node must be a valid FOQUS node object")
         if node.pythonCode is None:
             raise ValueError("node has no script to run")
-        
+
         node.runPython()
         logging.info(
             "Run script for node %s" % (node.name)
         )
-        
+
     def run_node_script (self, node):
         """
         Run the script for a given node.
-        This function will run the script based on 
+        This function will run the script based on
         the set node scriptMode.
 
         Options include:
         'pre' --> runs the script before the model
         'total' --> runs the script instead of the model
         'post' --> runs the script after the model
-        
+
         Parameters
         ----------
         node : gr.Node
@@ -532,7 +533,7 @@ class NetlFoqus(object):
             raise TypeError("node must be a valid FOQUS node object")
         if node.pythonCode is None:
             raise ValueError("node has no script to run")
-        
+
         node.runCalc()
         logging.info(
             "Run script for node %s with script mode %s" % (node.name, node.scriptMode)
@@ -559,7 +560,7 @@ class NetlFoqus(object):
             logging.info(
                 "Working directory is already %s" % cwd
             )
-         
+
         my_session = session(useCurrentWorkingDir=True)
 
         # FOQUS optimizers expect flowsheet to be the Graph (gr.Graph) with .input, not NetlFoqus
@@ -574,12 +575,12 @@ class NetlFoqus(object):
     def validate_node_script(self, node):
         """
         Run a node script in standalone mode and validate it completes without errors.
-        
+
         Parameters
         ----------
         node : gr.Node
             The node to run the script for.
-        
+
         Returns
         -------
         bool
@@ -588,7 +589,7 @@ class NetlFoqus(object):
         try:
             # Run the node script
             self.run_standalone_node_script(node)
-            
+
             # Check for calculation errors on the node
             if node.calcError != 0:
                 logging.error(
@@ -596,23 +597,23 @@ class NetlFoqus(object):
                     f"Error code: {node.calcError}"
                 )
                 return False
-            
+
             logging.info(f"Node script executed successfully for {node.name}")
             return True
-            
+
         except Exception as e:
             logging.error(
                 f"Exception occurred while running node script for {node.name}: {str(e)}"
             )
             return False
-    
+
     def setup_optimizer(self, session, solver_name, source_node):
         """
         This function setups the optimizer for the session
 
-        It creates a problem object, assisngs the solver name, 
+        It creates a problem object, assisngs the solver name,
         and appends the decision variables to the problem
-        
+
         Parameters
         ----------
         session : foqus_lib.framework.session.session
@@ -632,17 +633,17 @@ class NetlFoqus(object):
         #       this class currently only supports NLopt
         problem = session.optProblem
         problem.solver = solver_name
-        # HOTFIX: append decision variables rather than assign 
-        # them which results in overwriting an old dv with the following one 
+        # HOTFIX: append decision variables rather than assign
+        # them which results in overwriting an old dv with the following one
         for dv in self.dv:
             problem.v.append(f"{source_node.name}.{dv.ipvname}")
-        
+
         return problem
 
     def create_problem_objective_singular (self, problem, objectives_list, output_nodes_list, failure_val_list, penalty_scale_list):
         """
         This function creates a problem objective
-        
+
         Parameters
         ----------
         problem : foqus_lib.framework.optimizer.problem
@@ -681,14 +682,14 @@ class NetlFoqus(object):
             objective_function.fail = failure_val_list[idx]
             problem.obj.append(objective_function)
             problem.objtype = problem.OBJ_TYPE_EVAL
-        
+
         return problem
 
     def create_problem_objective_multiple (self, problem, objectives_list, output_nodes_list, failure_val_list, penalty_scale_list, weights_list):
-    
+
         """
         This function creates a problem objective
-        
+
         Parameters
         ----------
         problem : foqus_lib.framework.optimizer.problem
@@ -713,7 +714,7 @@ class NetlFoqus(object):
             The problem object.
         """
         problem.obj = []
-        
+
         # generate obj py_code
         obj_py_code = ""
 
@@ -726,15 +727,15 @@ class NetlFoqus(object):
 
             # add '+' between terms
             obj_py_code += (" + " if idx > 0 else "") + term
-        
+
         # generate failure value
         failure_value = 0
         for idx, obj in enumerate(objectives_list):
             failure_value += (
-                failure_val_list[idx] * 
-                weights_list[idx] / 
+                failure_val_list[idx] *
+                weights_list[idx] /
                 penalty_scale_list[idx]
-            ) 
+            )
 
         for idx, obj in enumerate(objectives_list):
 
@@ -744,7 +745,7 @@ class NetlFoqus(object):
             objective_function.fail = failure_value
             problem.obj.append(objective_function)
             problem.objtype = problem.OBJ_TYPE_EVAL
-        
+
         return problem
 
     def get_max_constraint (self, variable, node, max_value):
@@ -792,8 +793,8 @@ class NetlFoqus(object):
 
         return f'({min_value} - f["{node.name}"]["{variable}"])'
 
-    def create_problem_constraint ( self, 
-                                    problem, 
+    def create_problem_constraint ( self,
+                                    problem,
                                     pycode,
                                     penalty_factor=10,
                                     form = "Linear"):
@@ -828,21 +829,21 @@ class NetlFoqus(object):
 
         return problem
 
-    def setup_nlopt_solver_options(self, 
-                            problem, 
-                            use_defaults = False, 
-                            algorithm = None, 
-                            max_func_eval = None, 
-                            max_time = None, 
+    def setup_nlopt_solver_options(self,
+                            problem,
+                            use_defaults = False,
+                            algorithm = None,
+                            max_func_eval = None,
+                            max_time = None,
                             tol_func_abs = None,
                             tol_x_abs = None,
                             tol_x_rel = None,
-                            tol_func_rel = None, 
-                            lower_bound = None, 
+                            tol_func_rel = None,
+                            lower_bound = None,
                             upper_bound = None):
 
         """
-        This function setups the solver options 
+        This function setups the solver options
         The user has the option to simply use the default solver options
         or to specify the solver options manually
         Parameters
@@ -876,15 +877,15 @@ class NetlFoqus(object):
 
         if use_defaults:
             problem.solverOptions[problem.solver] = {
-            "Solver": "BOBYQA",   
-            "maxeval": 0,       
+            "Solver": "BOBYQA",
+            "maxeval": 0,
             "maxtime": 60,
-            "tolfunabs": 1e-9,    
+            "tolfunabs": 1e-9,
             "tolfunrel": 1e-9,
             "tolxabs": 1e-9,
             "tolxrel": 1e-9,
-            "lower": 0,         
-            "upper": 10    
+            "lower": 0,
+            "upper": 10
             }
         else:
             optim = nlopt.opt()
@@ -923,12 +924,13 @@ class NetlFoqus(object):
         problem : foqus_lib.framework.optimizer.problem
             The problem object.
         """
-        
+
         my_solver = problem.run(session)
         my_solver.join()  # wait for results
         logging.info("Optimization completed")
 
         return my_solver, problem
+
 
 ###############################################################################
 # NODE SCRIPTS
@@ -994,14 +996,14 @@ netl = NetlOlca()
 netl.connect()
 netl.read()
 
-param_set_ref = lca_prommis.run_analysis.update_parameter ( netl, 
+param_set_ref = lca_prommis.run_analysis.update_parameter ( netl,
                                                             ps_uuid = ps_uuid,
-                                                            parameter_set_name = parameter_set_name, 
-                                                            new_parameter_set = params1) 
+                                                            parameter_set_name = parameter_set_name,
+                                                            new_parameter_set = params1)
 
-result = lca_prommis.run_analysis.run_analysis (netl, 
-                                                ps_uuid = ps_uuid, 
-                                                impact_method_uuid = impact_method_uuid, 
+result = lca_prommis.run_analysis.run_analysis (netl,
+                                                ps_uuid = ps_uuid,
+                                                impact_method_uuid = impact_method_uuid,
                                                 parameter_set = param_set_ref.parameters)
 result.wait_until_ready()
 total_impacts = lca_prommis.generate_total_results.generate_total_results(result)
@@ -1141,13 +1143,13 @@ df = lca_prommis.final_lca.merge_flows(df, merge_source='Solid Feed', new_flow_n
 
 df = lca_prommis.final_lca.merge_flows(df, merge_source='Roaster Product', new_flow_name='73.4% REO Product')
 
-df = lca_prommis.final_lca.merge_flows(df, merge_source='Wastewater', new_flow_name='Wastewater', merge_column='Category') 
+df = lca_prommis.final_lca.merge_flows(df, merge_source='Wastewater', new_flow_name='Wastewater', merge_column='Category')
 
-df = lca_prommis.final_lca.merge_flows(df, merge_source='Solid Waste', new_flow_name='Solid Waste', merge_column='Category') 
+df = lca_prommis.final_lca.merge_flows(df, merge_source='Solid Waste', new_flow_name='Solid Waste', merge_column='Category')
 
 finalized_df = lca_prommis.final_lca.finalize_df(
-        df=df, 
-        reference_flow='73.4% REO Product', 
+        df=df,
+        reference_flow='73.4% REO Product',
         reference_source='Roaster Product',
         water_type='raw fresh water'
     )
@@ -1168,7 +1170,7 @@ prommis_outputs = { "total plant cost": value(m.fs.costing.total_overnight_capit
                     "cost of recovery per REE": value(m.fs.costing.cost_of_recovery),
                     "recovery rate": value(m.fs.overall_ree_recovery_percentage[0]),
                     "product purity": value(m.fs.ree_product_purity_percentage[0])
-} 
+}
 
 for output, val in prommis_outputs.items():
     f[output] = val
@@ -1188,6 +1190,7 @@ for count, row in prommis_outputs.iterrows():
 prommis_outputs.to_csv(os.path.join(output_dir, "prommis_outputs.csv"), index = False)
 """
 
+
 ###############################################################################
 # FUNCTIONS
 ###############################################################################
@@ -1197,7 +1200,11 @@ def get_uky_vars_exchanges():
 
     Returns
     -------
-    pandas.DataFrame
+    tuple
+        A tuple of length three:
+        - list, a list of all variables
+        - pandas.DataFrame, an LCA-finalized exchange data frame
+        - pyomo.ConcreteModel, the UKy flowsheet model
     """
     # Build the ConcreteModel from UKy flowsheet
     m, _ = uky.main()
@@ -1263,13 +1270,13 @@ def get_uky_vars_exchanges():
     )
     return (all_vars, finalized_df, m)
 
-def initiate_lca_model(client, 
-                        process_name, 
-                        process_description, 
-                        lca_df_finalized, 
-                        impact_method_uuid, 
-                        parameter_set_name, 
-                        parameter_set_description, 
+def initiate_lca_model(client,
+                        process_name,
+                        process_description,
+                        lca_df_finalized,
+                        impact_method_uuid,
+                        parameter_set_name,
+                        parameter_set_description,
                         is_baseline,
                         save_outputs=False,
                         output_dir = None):
@@ -1304,7 +1311,7 @@ def initiate_lca_model(client,
     if save_outputs:
         if output_dir is None:
             raise ValueError("Please provide an output directory to save the outputs")
-    
+
     process, my_parameters = lca_prommis.create_lca.create_new_process(client,
                                                                         lca_df_finalized,
                                                                         process_name,
@@ -1312,16 +1319,16 @@ def initiate_lca_model(client,
     ps = lca_prommis.create_ps.create_ps(client, process.id)
     ps_uuid = ps.id
     # create baseline parameter set
-    parameter_set = lca_prommis.run_analysis.create_parameter_set(client, 
-                                                                process.id, 
-                                                                ps.id, 
-                                                                parameter_set_name, 
-                                                                parameter_set_description, 
+    parameter_set = lca_prommis.run_analysis.create_parameter_set(client,
+                                                                process.id,
+                                                                ps.id,
+                                                                parameter_set_name,
+                                                                parameter_set_description,
                                                                 is_baseline)
-    
-    result = lca_prommis.run_analysis.run_analysis(client, 
-                                                    ps.id, 
-                                                    impact_method_uuid, 
+
+    result = lca_prommis.run_analysis.run_analysis(client,
+                                                    ps.id,
+                                                    impact_method_uuid,
                                                     parameter_set.parameters)
     result.wait_until_ready()
     total_impacts = lca_prommis.generate_total_results.generate_total_results(result)
@@ -1335,7 +1342,7 @@ def initiate_lca_model(client,
         run_info.loc[len(run_info)] = ['impact_method_uuid', impact_method_uuid]
         run_info.loc[len(run_info)] = ['parameter_set_name', parameter_set_name]
         run_info.to_csv(os.path.join(output_dir, "run_info.csv"), index=False)
-    
+
     return total_impacts, my_parameters, ps_uuid
 
 def initialize_decision_variables(nf_obj, m):
@@ -1379,23 +1386,23 @@ def validate_optimization_problem(problem, session): # Work still in progress - 
     """
     logging.info(f"Decision Variables (v): {problem.v}")
     logging.info(f"Number of Decision Variables: {len(problem.v)}")
-    
+
     # Check if variables are properly defined
     if len(problem.v) == 0:
         raise ValueError("No decision variables defined in optimization problem!")
-    
+
     # Check bounds
     logging.info(f"Variable bounds: {problem.v}")
-    
+
     # Check objective function
     logging.info(f"Objective: {problem.obj}")
     if len(problem.obj) == 0:
         raise ValueError("No objective function defined!")
-    
+
     # Check solver settings
     if problem.solver is None:
         raise ValueError("No solver selected!")
-    
+
     logging.info(f"Selected Solver: {problem.solver}")
     logging.info(f"Solver Options: {problem.solverOptions.get(problem.solver, {})}")
 
@@ -1416,10 +1423,10 @@ def generate_penalty_scales(prommis_outputs_df, olca_outputs_df):
     -------
     ps_guide : pandas.DataFrame
         The dataframe containing the penalty scales for the potential objective variables
-    
+
     Notes
     -----
-    * This method assumes that the objective variables don't range across orders of magnitude in the 
+    * This method assumes that the objective variables don't range across orders of magnitude in the
     subsequent runs
     """
     ps_guide = pd.DataFrame(columns=['objective', 'initial_value', 'penalty_scale'])
@@ -1431,7 +1438,7 @@ def generate_penalty_scales(prommis_outputs_df, olca_outputs_df):
         ignore_index=True
     )
     for idx, row in ps_guide.iterrows():
-        ps_guide.at[idx, 'penalty_scale'] = 1/row['initial_value'] if row['initial_value'] != 0 else 1    
+        ps_guide.at[idx, 'penalty_scale'] = 1/row['initial_value'] if row['initial_value'] != 0 else 1
 
     return ps_guide
 
@@ -1518,8 +1525,8 @@ def create_openlca_outputs(nf_obj, total_impacts, node_name):
     Creates the openLCA outputs for the given impact categories
     """
     for impact_category in total_impacts['name']:
-        nf_obj.initiate_output_variables(node_name, 
-                                    impact_category, 
+        nf_obj.initiate_output_variables(node_name,
+                                    impact_category,
                                     total_impacts.loc[total_impacts['name'] == impact_category, 'amount'].values[0])
 
 def get_optimization_results(client, ps_uuid, parameter_set_name, solver, decision_variables, prommis_outputs, parameters, total_impacts):
@@ -1527,7 +1534,7 @@ def get_optimization_results(client, ps_uuid, parameter_set_name, solver, decisi
     """
     This function:
     * Gets the optimization results from the solver
-    * Identifies the best solution 
+    * Identifies the best solution
     * Exports and displays the results for the best solution inlcuding
         1- The decision variables
         2- The prommis outputs
@@ -1559,14 +1566,18 @@ def get_optimization_results(client, ps_uuid, parameter_set_name, solver, decisi
 
     # get parameters for given index
     col_name_param = f"parameter_value_{best_so_far_index}"
-    parameters_solution = parameters[['parameter_name', 'parameter_description', col_name_param]]
+    parameters_solution = parameters[[
+        'parameter_name', 'parameter_description', col_name_param
+    ]]
     parameters_solution = parameters_solution.rename(
-    columns={col_name_param: 'parameter_value'}
+        columns={col_name_param: 'parameter_value'}
     )    # pass the parameters to openLCA
-    lca_prommis.run_analysis.update_parameter(client, 
-                                              ps_uuid = ps_uuid,
-                                              parameter_set_name = parameter_set_name, 
-                                              new_parameter_set = parameters_solution) 
+    lca_prommis.run_analysis.update_parameter(
+        client,
+        ps_uuid=ps_uuid,
+        parameter_set_name=parameter_set_name,
+        new_parameter_set=parameters_solution
+    )
     # get environmental impact results for given index
     col_name_impacts = f"amount_{best_so_far_index}"
     total_impacts_solution = total_impacts[['name', 'units',col_name_impacts]]
@@ -1582,7 +1593,7 @@ def get_optimization_results(client, ps_uuid, parameter_set_name, solver, decisi
     return parameters_solution, total_impacts_solution, decision_variables_solution, prommis_outputs_solution
 
 
-    
+
 #
 # SANDBOX
 #
@@ -1621,7 +1632,7 @@ if __name__ == "__main__":
 
     # Help with initializing decision variables
     foqus_class.initialize_decision_variables(nf, m)
-    
+
     # Store decision variable information in a dataframe and save to output directory
     dv_data = []
     for dv in nf.dv:
@@ -1645,7 +1656,7 @@ if __name__ == "__main__":
 
     # connect intermediate variables
     nf.connect_intermediate_variables(nf.prommis_node, nf.olca_node)
-    
+
     prommis_outputs = { "total plant cost": value(m.fs.costing.total_overnight_capital),
                 "total bare erected cost": value(m.fs.costing.total_BEC),
                 "total annualized capital cost": value(m.fs.costing.annualized_cost),
@@ -1658,7 +1669,7 @@ if __name__ == "__main__":
                 "recovery rate": value(m.fs.overall_ree_recovery_percentage[0]),
                 "product purity": value(m.fs.ree_product_purity_percentage[0])
     }
-    
+
     for output, value in prommis_outputs.items():
         nf.initiate_output_variables(nf.prommis_node,
                                      output,
@@ -1667,30 +1678,30 @@ if __name__ == "__main__":
     # export prommis outputs to the output directory
     prommis_outputs_df = pd.DataFrame(prommis_outputs.items(),columns=["output", "value"])
     prommis_outputs_df.to_csv(output_dir / "prommis_outputs.csv", index=False)
-    
+
 
     # initiate lca_model
     lca_df_finalized = nf.exchanges
     netl = NetlOlca()
     netl.connect()
     netl.read()
-    
+
     process_name = "TESTING - REO Extraction From Coal Mining Refuse | UKy Flowsheet"
 
-    process_description = """This process involves the production of a Rare 
-    Earth Oxide solid extraction from coal mining refuse. The scope of this 
-    work starts with the leaching of size-reduced REE-rich feedstock (REE: 
-    Rare Earth Elements) and ends with the recovery of mixed REO solids. The 
-    process consists of six main stages: 1) Mixing and Leaching, 2) Rougher 
-    Solvent Extraction, 3) Cleaner Solvent Extraction, 4) Precipitation, 
-    5) Solid-Liquid (S/L) separation, and 6) Roasting. This process does not 
-    account for upstream processes leading to the production of REE-rich 
-    feedstock nor does it account for Downstream processes leading to the 
-    separation of REE contained in the REO. The main product is a rare earth 
-    oxide solid with no other by-products or co-products. The functional 
-    unit is 1 kg of recovered REO solids. The material and energy inputs 
-    shown in the system boundary figure below have been shortlisted and 
-    estimated based on the UKy flowsheet output, as well as other relevant 
+    process_description = """This process involves the production of a Rare
+    Earth Oxide solid extraction from coal mining refuse. The scope of this
+    work starts with the leaching of size-reduced REE-rich feedstock (REE:
+    Rare Earth Elements) and ends with the recovery of mixed REO solids. The
+    process consists of six main stages: 1) Mixing and Leaching, 2) Rougher
+    Solvent Extraction, 3) Cleaner Solvent Extraction, 4) Precipitation,
+    5) Solid-Liquid (S/L) separation, and 6) Roasting. This process does not
+    account for upstream processes leading to the production of REE-rich
+    feedstock nor does it account for Downstream processes leading to the
+    separation of REE contained in the REO. The main product is a rare earth
+    oxide solid with no other by-products or co-products. The functional
+    unit is 1 kg of recovered REO solids. The material and energy inputs
+    shown in the system boundary figure below have been shortlisted and
+    estimated based on the UKy flowsheet output, as well as other relevant
     literature."""
 
     impact_method_uuid = '60cb71ff-0ef0-4e6c-9ce7-c885d921dd15'
@@ -1698,15 +1709,15 @@ if __name__ == "__main__":
     parameter_set_name = "Baseline"
     parameter_set_description = "Baseline parameter set for the process"
     is_baseline = True
-    total_impacts, my_parameters, ps_uuid = foqus_class.initiate_lca_model (netl, 
-                                                                            process_name, 
-                                                                            process_description, 
-                                                                            lca_df_finalized, 
-                                                                            impact_method_uuid, 
-                                                                            parameter_set_name, 
-                                                                            parameter_set_description, 
+    total_impacts, my_parameters, ps_uuid = foqus_class.initiate_lca_model (netl,
+                                                                            process_name,
+                                                                            process_description,
+                                                                            lca_df_finalized,
+                                                                            impact_method_uuid,
+                                                                            parameter_set_name,
+                                                                            parameter_set_description,
                                                                             is_baseline)
-    
+
 
     # create new df/file to store run info
     run_info = pd.DataFrame(columns=['item', 'description'])
@@ -1721,15 +1732,15 @@ if __name__ == "__main__":
     # save my_parameters to the output directory
     my_parameters.to_csv(output_dir / "my_parameters.csv", index=False)
 
-    # create output variables 
+    # create output variables
     for impact_category in total_impacts['name']:
-        nf.initiate_output_variables(nf.olca_node, 
-                                    impact_category, 
+        nf.initiate_output_variables(nf.olca_node,
+                                    impact_category,
                                     total_impacts.loc[total_impacts['name'] == impact_category, 'amount'].values[0])
         logging.info(
             "Initiated output variable %s for node %s: amount=%f" % (
-            impact_category, 
-            nf.olca_node.name, 
+            impact_category,
+            nf.olca_node.name,
             total_impacts.loc[total_impacts['name'] == impact_category, 'amount'].values[0]
             )
         )
@@ -1743,27 +1754,27 @@ if __name__ == "__main__":
     # nf.validate_node_script(nf.prommis_node)
 
     my_session = nf.create_session("/home/franc/foqus_wd") # create session
-    # Note: This returns many warnings and errors - we can ignore this as we only 
+    # Note: This returns many warnings and errors - we can ignore this as we only
     # care about foqus loading the NLopt solver
-    
+
     problem = nf.setup_optimizer(my_session, "NLopt", nf.prommis_node) # first step in setting up optimizer
 
     ps_guide = foqus_class.generate_penalty_scales(prommis_outputs_df, total_impacts)
 
     objectives_list =  ["Freshwater ecotoxicity", "total plant cost"]
-    
+
     penalty_scale_list = foqus_class.get_penalty_scales(objectives_list, ps_guide)
 
-    # problem = nf.create_problem_objective_singular(problem,                                         
-    #                                             ["Freshwater ecotoxicity"], 
+    # problem = nf.create_problem_objective_singular(problem,
+    #                                             ["Freshwater ecotoxicity"],
     #                                             [nf.olca_node],
     #                                             [10000000],
     #                                             penalty_scale_list
     #                                             ) # create problem objective
 
 
-    problem = nf.create_problem_objective_multiple(problem,                                         
-                                                ["Freshwater ecotoxicity", "total plant cost"], 
+    problem = nf.create_problem_objective_multiple(problem,
+                                                ["Freshwater ecotoxicity", "total plant cost"],
                                                 [nf.olca_node, nf.prommis_node],
                                                 [10000000, 1.3],
                                                 penalty_scale_list,
@@ -1779,7 +1790,7 @@ if __name__ == "__main__":
 
     # TODO:
     # 1.    create a function to extract the optimization result and pass the final                         --> In progress
-    #       result to openLCA 
+    #       result to openLCA
 
     # 2.    add code to extract and store the decision variables values at every run                        --> Done
 
@@ -1787,10 +1798,10 @@ if __name__ == "__main__":
     #       Issue
     #       =====
     #       The issue with this method is that it requires the user to write a python code                  --> TBD
-    #       to define the constraint - as such this is not ideal. 
+    #       to define the constraint - as such this is not ideal.
     #       example: py_code = f["olca_node"]["Cumulative Energy Demand"] < 100
-    #       What even makes this method more challenging is the need to have the constraint 
-    #       variables included in the node outputs - which is autmatically true for the 
+    #       What even makes this method more challenging is the need to have the constraint
+    #       variables included in the node outputs - which is autmatically true for the
     #       olca_node but should be defined separately for the prommis_node.
 
     # 4.    fix function to validate the node script - the current function has bugs                        --> In progress
@@ -1803,14 +1814,14 @@ if __name__ == "__main__":
     # 7.    setup_optimizer: add error handling for solver name (should be checked for a list)              --> Skipped for now
     #                                                                                                           since we ony need NLopt
 
-    # 8.    create_problem_objective: Add error handling for objectives list each objective                 --> Done 
-    #       should be checked against the outputVars 
+    # 8.    create_problem_objective: Add error handling for objectives list each objective                 --> Done
+    #       should be checked against the outputVars
 
     # 9.    setup_nlopt_solver_options: Add error handling for algorithm each algorithm should              --> Done
     #       be checked for a list BOBYQA, COBYLA, DIRECT, etc.
-    # 
+    #
     # 10.   Include 'value for failure' in objective setup function                                         --> Done
-    #       The value for failure should be higher than the expected highest value for a successful 
+    #       The value for failure should be higher than the expected highest value for a successful
     #       objective.
 
     # 11.   Objective Function setup
