@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lca_prommis"
+version = "0.1.0"
+description = "An integration of openLCA and PrOMMiS."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Tyler W. Davis", email = "tyler.davis@netl.doe.gov" },
+    { name = "Francis Hanna", email = "francis.hanna@netl.doe.gov" },
+    { name = "Daniel Naiman", email = "daniel.naiman@netl.doe.gov" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+# Install fedelemflowlist and netlolca separately!
+dependencies = [
+    # "fedelemflowlist @ git+https://github.com/FLCAC-Admin/fedelemflowlist",
+    # "netlolca @ git+https://github.com/NETL-RIC/netlolca",
+    "numpy",
+    "pubchempy",
+    "pymatgen",
+    "openpyxl",
+]
+
+[tool.setuptools.packages.find]
+include = [
+    "lca_prommis",
+    "lca_prommis.create_olca_process"
+]

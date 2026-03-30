@@ -41,6 +41,7 @@ def create_exchange_elementary_flow(client,
                                     flow_uuid,
                                     unit,
                                     amount,
+                                    amount_formula,
                                     is_input) -> olca.Exchange:
     """Create and return an `olca.Exchange` for an ELEMENTARY_FLOW.
 
@@ -55,6 +56,8 @@ def create_exchange_elementary_flow(client,
         Falls bac to the flow's reference unit.
     amount : int, float
         Numeric flow amount.
+    amount_formula : str
+        Formula for the flow amount.
     is_input : bool
         Whether the flow is an input or output.
 
@@ -62,6 +65,13 @@ def create_exchange_elementary_flow(client,
     -------
     olca.Exchange
         Exchange object.
+
+    Note
+    ----
+    Note on using amount and amount formula:
+        * If amount is provided and there is no need for a parameter to be defined, amount_formula can be None
+        * If both an amount and an amount formula are provided, the amount formula will be used (override the amount)
+            In this case, the amount will be ignored and can be considered redundant.
 
     Raises
     ------
@@ -109,6 +119,7 @@ def create_exchange_elementary_flow(client,
     if exchange.unit is None:
         exchange.unit = o_units.unit_ref(unit.lower())
     exchange.amount = float(amount)
+    exchange.amount_formula = amount_formula
     exchange.is_input = is_input
 
     return exchange

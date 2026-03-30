@@ -13,7 +13,7 @@ This step is performed entirely in prommis_LCA_data.py
 
     Step 1.1: Identify all LCA-relevant flows in the UKy PrOMMiS flowsheet
     ======================================================================
-In total, 17 material streams with 45 material flows were identified in addition to 4 electricity flows and 2 heat flows. 
+In total, 17 material streams with 45 material flows were identified in addition to 4 electricity flows and 2 heat flows.
 2 new flows were also added to reflect data from the NETL UP Library: sodium hydroxide and oxalic acid.
 
     Step 1.2: Extract all flows/parameters and structure them in a dataframe
@@ -206,30 +206,30 @@ New Technical Direction - EY25 - Q3/Q4 (11/10/2025)
 ---------------------------------------------------\
 
 Info from TD
-    * Establish a protocol for bi-directional communication between 
+    * Establish a protocol for bi-directional communication between
             PrOMMiS and openLCA - allow openLCA results to inform PrOMMiS optimization
                 ** Supports constraint-based decision framework
-                    My understanding, is that this should involve something simialr to the 
+                    My understanding, is that this should involve something simialr to the
                     current PrOMMiS optimization framework
                         1- Setting Goal
                         2- Setting optimization parameter
                         3- Setting constraints
                         2 and 3 are probably what the TD note is trying to address
                             (e.g. "narrow the analysis scope in the context of practical considerations)
-    * Deliverable should be in the form of a 
+    * Deliverable should be in the form of a
         ** methods memo
         ** demonstration on the UKy flowsheet
         ** test on other flowsheets
 
 Notes on optimization model in PrOMMiS
     * Optiomization in prommis is done using nonlinear programming via IPOPT which
-        ** updates unfixed design variables 
+        ** updates unfixed design variables
         ** to minimize the active Objective (e.g., minimize environmental impact)
 
-    * the workflow consists of 
+    * the workflow consists of
         ** unfixing decision variables (e.g., membrane length)
             {variable}.unfix()
-        ** adding constraints using pyomo's 
+        ** adding constraints using pyomo's
             *** Expression({insert expression})
             *** Param(initialize={insert parameter}, mutable = True)
             *** Constraint(expr={insert conditional expression})
@@ -239,22 +239,22 @@ Notes on optimization model in PrOMMiS
     * the above optimization elements can all be defined in a single function
         ** for exampple def build_optimization(...)
             to facilitate configuring the optimizer
-        ** or this can be a populated automatically based on inputs in a 
+        ** or this can be a populated automatically based on inputs in a
             yaml configuration file
 
 Potential additions/modifications to existing solution from previous PrOMMiS-LCA integration example
     * Create new function to configure the optimization solver
         variables, constraints, Objective
-        ** the objective and constraint in this case can be complicated 
+        ** the objective and constraint in this case can be complicated
             *** which impact category?
             *** is cost included?
-            *** if more than one impact category 
+            *** if more than one impact category
                 weighing factors might be needed for the optimization equation
             *** if env impact + cost are included
-                weighing factors might be needed for the optimization equation 
+                weighing factors might be needed for the optimization equation
     * Add feature to create a parameter for each exchange
     * Create function to populate parameters after every iteration
-        ** we can possibly include a feature - maybe an option for the user - to save 
+        ** we can possibly include a feature - maybe an option for the user - to save
             all the solutions for subsequent revision and/or data analysis
     * Create function to set allocation - which is very crucial for CM flowsheets
     * Create function to allow modeling displaced/avoided products
@@ -272,7 +272,7 @@ Other necessary modifications to facilitate the reusability of the solution for 
         ** modify existing functions or create new function that allows users to add documentation for each
             exchange
 
-Foqus installation on Ubuntu
+FOQUS installation on Ubuntu
 ----------------------------
 1. Install conda
     `wget https://repo.anaconda.com/archive/Anaconda3-2025.12-1-Linux-x86_64.sh`
@@ -303,13 +303,13 @@ Foqus installation on Ubuntu
     cd lca-prommis
     pip install -e .
 10. Install missing dependencies for Qt (to run FOQUS GUI)
-    sudo apt install -y libxcb-xinerama0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 
+    sudo apt install -y libxcb-xinerama0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0
         libxcb-render-util0 libxcb-shape0 libxcb-xfixes0 libxkbcommon-x11-0 libglu1-mesa
     (NOTE: only the last two are mentioned in FOQUS readthedocs)
 
     Note:
     ====
-    * openLCA-related libraries require python >= 3.11 
+    * openLCA-related libraries require python >= 3.11
         this was the main reason to move to linux/wsl
         we can run prommis/foqus/olca in python 3.12
     * After resolving all dependency issues - one remained
@@ -317,21 +317,21 @@ Foqus installation on Ubuntu
         * pymatgen  requires    matplotlib >=3.8
 
         * Only solution --> downgrade matplotlib to 3.7.5
-                        --> downgrade pymatgen to 2022.x 
-                            to be compatible with matplotlib 3.7.5 
+                        --> downgrade pymatgen to 2022.x
+                            to be compatible with matplotlib 3.7.5
 
                             Issue: pymatgen 2022.x requires Python 3.10
 
-    BUT - since we're not plotting anything with Pymatgen - this dependency 
-        issue shouldn't cause any problems 
-    
+    BUT - since we're not plotting anything with Pymatgen - this dependency
+        issue shouldn't cause any problems
+
     SKIP THE DETAILS --> see final versions below
     ================
     matplotlib  3.10.7
     pymatgen    2024.11.13
     tabulate    0.9.0
 
-11. Install openLCA for Linux 
+11. Install openLCA for Linux
     =========================
     11.1 wget https://share.greendelta.com/index.php/s/hcl5JAB1p0FxfFe/download
     11.2 mv download openLCA_mkl_Linux_x64_2.5.0_2025-06-16.tar.gz
@@ -348,30 +348,30 @@ Foqus installation on Ubuntu
 13. Use and testing
     ===============
 
-- Running foqus: 
+- Running foqus:
     * Now that conda automatically starts - cd ccsi-foqus
     * run:  foqus
         or
-            foqus &     #this allows the user to regain control of their terminal while using foqus 
+            foqus &     #this allows the user to regain control of their terminal while using foqus
 
 14. Testing
     =======
     * Go to flowsheets (2nd tab on the top)
     * Create a node in foqus - Left toolbar - 2nd button from the top
-    * Select the 'Select' option (1st button on Left toolbar) 
+    * Select the 'Select' option (1st button on Left toolbar)
     * Click on node
     * Edit node (3rd button from the bottom in left toolbar)
-    * Create new output variable - call it 't' and initiate it at '0' 
+    * Create new output variable - call it 't' and initiate it at '0'
     * Add a script that calculates the output variable - Use the below script:
-    
+
     """
         import pandas as pd
         import olca_schema as olca
         from netlolca.NetlOlca import NetlOlca
-        import prommis.uky.uky_flowsheet as uky 
+        import prommis.uky.uky_flowsheet as uky
         import src as lca_prommis
 
-        m, _ = uky.main() 
+        m, _ = uky.main()
 
         prommis_data = lca_prommis.data_lca.get_lca_df(m)
 
@@ -394,13 +394,13 @@ Foqus installation on Ubuntu
         df = lca_prommis.final_lca.merge_flows(df, merge_source='Roaster Product', new_flow_name='73.4% REO Product')
 
 
-        df = lca_prommis.final_lca.merge_flows(df, merge_source='Wastewater', new_flow_name='Wastewater', merge_column='Category') 
+        df = lca_prommis.final_lca.merge_flows(df, merge_source='Wastewater', new_flow_name='Wastewater', merge_column='Category')
 
-        df = lca_prommis.final_lca.merge_flows(df, merge_source='Solid Waste', new_flow_name='Solid Waste', merge_column='Category') 
+        df = lca_prommis.final_lca.merge_flows(df, merge_source='Solid Waste', new_flow_name='Solid Waste', merge_column='Category')
 
         finalized_df = lca_prommis.final_lca.finalize_df(
-                df=df, 
-                reference_flow='73.4% REO Product', 
+                df=df,
+                reference_flow='73.4% REO Product',
                 reference_source='Roaster Product',
                 water_type='raw fresh water'
             )
@@ -429,16 +429,16 @@ LCA-PrOMMiS Development Notes - (Q3Q4)
         PrOMMiS Node
         ------------
         * Outputs (Relevant to LCA)
-            Conduct all calculations in output code snippet 
+            Conduct all calculations in output code snippet
             Convert values to LCA relevant inputs
-            The outputs should be the different exchanges values   
+            The outputs should be the different exchanges values
                 - separately
                     Or
                 - df
             Can we pass an object like a df via foqus?
-                Tried testing it by setting the variabel type to Object 
+                Tried testing it by setting the variabel type to Object
                 but it's not working
-            
+
             solution 1
                 * Export finalized_df as csv to a temp folder
                 * import that same csv in the openLCA node
@@ -446,21 +446,21 @@ LCA-PrOMMiS Development Notes - (Q3Q4)
             solution 2
                 * Extract the distinct exchange values from prommis node
                 * pass the values to the openLCA node
-                * compile values again into a df that can be used to create new 
+                * compile values again into a df that can be used to create new
                     process, PS, and results
-        
+
             After discussion with Anuja - solution 1 doesn't work
             There has to be parameters being passed via an edge
-        
+
         openLCA node
         ------------
-            * Works perfectly 
+            * Works perfectly
             * All the work and user input is done via the Ubuntu terminal
 
     Update 12/15/2025
     -----------------
     - Next steps: Incroporate Prommis, LCA calculations, and the optimizer
-        * for context:see the discussion notes with Anuja saved in the project folder 
+        * for context:see the discussion notes with Anuja saved in the project folder
                     Meetings/Other Meetings/2025-12-12/20251212_MoM.docx
         * PrOMMiS node - the modifications are highlighted below
             ** inputs
@@ -469,8 +469,8 @@ LCA-PrOMMiS Development Notes - (Q3Q4)
             ** outputs
                 - the outputs from this node are the lca prommis data converted to LCA relevant units
                 - every exchange had a unit
-                    For future reference - to improve the code, the output variables should be called the 
-                        same as the final lca_df_finalized csv file 
+                    For future reference - to improve the code, the output variables should be called the
+                        same as the final lca_df_finalized csv file
                         (this will make more sense as you read the documentation)
             ** Node script
                 - The script includes the code to import the dependencies, run the prommis uky flowsheet
@@ -479,10 +479,10 @@ LCA-PrOMMiS Development Notes - (Q3Q4)
                 - One important aspect in the node script is the setup of the inputs (Dependent variables)
                     There were two ways to incorporate these variables
                         Option 1: modify the uky main function and set those as inputs (e.g., main (uky, leach_liquid, split_fraction))
-                                    and then when calling this function in the node script, the second and third arguments would be 
-                                    set to be equal to the foqus inputs - because after every iteration, those will change and we want them to 
+                                    and then when calling this function in the node script, the second and third arguments would be
+                                    set to be equal to the foqus inputs - because after every iteration, those will change and we want them to
                                     be passed back to prommis
-                                
+
                                 The challenge with option 1 is that every time we want to run a simulation we have to:
                                     1) modify the prommis uky main function
                                     2) reinstall or basically upgrade prommis in the ccsi-foqus environment
@@ -498,7 +498,7 @@ LCA-PrOMMiS Development Notes - (Q3Q4)
                                     uky.set_operating_conditions(m)
                                     # Important note regarding the below - all the variables in the UKy flowsheet are already fixed
                                     # setting the leach liquid feed flow in prommis to the appropriate input variable in foqus
-                                    # this automatically unfixes the variable in PrOMMiS 
+                                    # this automatically unfixes the variable in PrOMMiS
                                     if "Leach liquid feed" in x:
 	                                    m.fs.leach_liquid_feed.flow_vol.fix(x["Leach liquid feed"])
                                     # setting the split fraction in prommis to the appropriate input variable in foqus
@@ -514,7 +514,7 @@ LCA-PrOMMiS Development Notes - (Q3Q4)
                     * 0 minimum value
                     * 1000000 maximum value (for the sake of this exercise)
                     * 0 initial value
-                - For future reference, the inputs should be called the same as the PrOMMiS outputs 
+                - For future reference, the inputs should be called the same as the PrOMMiS outputs
                     and the same as the lca_df_finalized csv file generated inthe PrOMMiS node
                     (this will make more sense when you get to the Node script part below)
             ** outputs
@@ -548,7 +548,7 @@ LCA-PrOMMiS Development Notes - (Q3Q4)
                 # store the final value in the foqus output
                 f["GWP"] = total_gwp
                 ==============================================================
-        * Edge: Create an edge connecting PrOMMiS to the openLCA function 
+        * Edge: Create an edge connecting PrOMMiS to the openLCA function
                 when configuring that edge create a connection between the outputs of PrOMMiS node and the inputs of openLCA
                 Check:
                     Go to the openLCA node and make sure all the inputs are highlighted in 'pink' => connected
@@ -569,17 +569,17 @@ LCA-PrOMMiS Development Notes - (Q3Q4)
                     TODO:   how to determine this factor
                             What's its effect on the optimization results
                 - give it a 'Variable for Failure' - I set this as the static run result
-            
+
             ** Solver
                 - Select BOBYQA as an optimization model
             ** Run
-                - Run 
+                - Run
 
     Update 12/16/2025: Constructing an optimization flosheet without the GUI
     -----------------
     It seems there is a way to setup foqus and DFO directly through python based on the developer documentation
         *  https://foqus.readthedocs.io/en/stable/chapt_dev/index.html#
-    
+
     Going through the foqus git repository: https://github.com/CCSI-Toolset/FOQUS.git
     there is a possibility of using foqus features directly from foqus_lib.framework
     In this repository, some modules of interest include:
@@ -623,7 +623,7 @@ Brainstorming - Methods needed for ILI worflow via FOQUS
 - Function to create an output variable                                                     --> Done
 - Function to assign variable to node inputs or outputs                                     --> Done
 - Function to define a node script                                                          --> Done
-- Function to select decision variables 
+- Function to select decision variables
     * This should be based on the UKy flowsheet
     * The user would get a list of variables to pick from - based on the UKy flowsheet
 - Function to setup the inputs for the prommis node
@@ -641,7 +641,7 @@ Brainstorming - Methods needed for ILI worflow via FOQUS
     * Assigns each result to its relevant output
 - Function to create local parameters in openLCA
 - Function to create parameter sets for a product system in openLCA
-- Function to create inputs for LCA node   
+- Function to create inputs for LCA node
     * The inputs of the LCA node are based on the outputs of the prommis node
 - Function to create outputs for LCA node
     * Each impact category should be an output
@@ -659,11 +659,11 @@ Brainstorming - Methods needed for ILI worflow via FOQUS
         ** select impact categories
         ** setup governing objective function (equation)
     * minimie cost
-- Function to setup constraint 
+- Function to setup constraint
 - Function to select solver
 - Function to run optimization
 - Function to extract FOQUS results
-    
+
 Headless FOQUS Notes
 --------------------
 1- pip install git+https://github.com/CCSI-Toolset/FOQUS.git
@@ -704,3 +704,176 @@ Headless FOQUS Notes
     # e.g.
     script = """print ("hello world")"""
     prommis_node.pythonCode = script
+
+2/11/2026
+---------
+
+Notes on setting up the optimizer
+
+*   The optimizer has to be setup at the session level
+    So we need to setup or initiate a session first
+*   Then we need to assign the graph to that session
+    e.g., my_session.graph = my_graph
+    IMPORTANT CONSIDERATIONS
+        * here the we need to ensure that all the nodes and edges 
+        are assigned/included within that graph object
+        Technically it should be
+        Approaches:
+        * Approach 1 - either change foques class and base it all on
+        the session object rather than the graph object
+        * Approach 2 - Develop a separate class for the session
+        * Approach 3 - Directly use the session class from the foqus
+        class - 'foqus_lib.framework.session.session'
+*   The next action item would be to setup the optimizer
+    Assuming the session is created - 'my_session'                              --> Done
+
+*   configure optimization problem
+    problem = my_session.optProblem                                             --> Done
+
+*   setup the solver of the problem
+    problem.solver = "NLopt"                                                    --> Done
+
+*   Next define the optimizer inputs
+    **  Decision variables
+        problem.v = ["prommis_node.inVars[0]","prommis_node.inVars[1]"]         --> Done - nf.dv isinstance to be checked
+        #not sure of the syntax
+    **  Objective Function
+        from foqus_lib.framework.optimizer.problem import objectiveFunction
+        objective_1 = objectiveFunction()
+        objective_1.pycode = f[olca_node]['GWP'] #this would minimize GWP
+        problem.obj = [objective_1]
+        problem.objtype = problem.OBJ_TYPE_EVAL                                 --> Done with TODOs
+    **  Constraint                                                              --> In progress
+
+*   Setup solver options                                                        --> Done
+    Basically here everything is left the way it's set by default in 
+    the foqus GUI
+
+    problem.solverOptions["NLopt"] = {
+    "Solver": "BOBYQA",   # Algorithm: BOBYQA, COBYLA, DIRECT, etc.
+    "maxeval": 100,       # Maximum function evaluations
+    "maxtime": 60,        # Maximum time in hours (or float hours)
+    "tolfunrel": 1e-4,    # Relative tolerance
+    "lower": 0.0,         # Lower bound (scaled 0-10 typically)
+    "upper": 10.0         # Upper bound
+    }
+
+*   solver_1 = problem.run(my_session)                                          --> Done
+
+*   wait for the optimization to completes                                      --> Done
+    solver_1.join()
+    print ("Optimization Complete")
+
+2/25/2026
+---------
+
+Notes on penalty scale and penalty factor
+
+In contrained optimizations
+    * If a constraint is met, the objective function remains the same.
+    * If a constraint is not met, the objective function is modified
+        => it is penalized
+        In FOQUS, we have inquality constraints of the form g(x) <= 0
+        where the user defines what g(x) is (using a Python expression).
+        If a constraint is not met, the objective function is revised:
+            min Obj(x, a) = f(x) + pf
+            where   f(x) is the objective function
+                    pf is the penalty form and is a function of (a) and (g(x))
+
+Penalty Factor: 
+    - the penalty factor is assigned to the constraint
+    - the penalty form (f(a,g(x))) depends on the constraint form selected by the user
+    - constraint forms options: Linear, Quadratic, Step -- 
+    - see https://foqus.readthedocs.io/en/stable/chapt_opt/reference/optimization.html
+        for more infomation on the different constraint forms
+    - What is the significance of the penalty factor?
+      The penalty is used to give a certain cost for violation of the constraints
+        * If the penalty factor is too high
+            The new objective function will be dominated by the constraint violation
+            The algorithm behavior --> focus on searching for feasibility 
+
+        * If the penalty factor is too low
+            The objective function will be dominated by the main objective
+            The algorithm can - in some way - ignore the constraints
+
+Penalty Scale:
+
+- In the case where we have multiple objectives, there is a possibility that 
+    these objectives have different scales/magnitudes. For example obj_1 ranges between 10 and 15
+    and obj_2 ranges between 0.1 and 0.2
+- In this case we need to define a penalty scale for each objective.
+    This helps the solver apply the constraint violation penalty differently to 
+    these different objective functions. 
+
+    Special cases:
+    - Single objective optimization with constraints
+        * Penalty Scale = 1
+    - Single objective optimization without constraints
+        * Penalty Scale has no effect on the optimiation results
+    - Multiple objective optimization without constraints
+        * Penalty Scale has no effect on the optimiation results
+
+- How to set the penalty factor?
+    - There is no default value for penalty factor
+    - [FH] personal thoughts: 
+        * This can be an iterative process
+        * Start with a low penalty factor --> allows the algorithm to find many working solutions
+        * Gradually increase the penalty factor to force the algorithm into a solution that prioritizes 
+            feasibility while meeting objective
+
+- How to set the penalty scale?
+    - Default is 10
+    - Methodology - not explicitly explained in FOQUS Documentation
+
+References:
+    1- https://foqus.readthedocs.io/en/stable/chapt_opt/reference/optimization.html
+    2- https://app.readthedocs.org/projects/foqus/downloads/pdf/latest/
+    3- https://doi.org/10.1016/j.egypro.2014.11.113
+
+New instructions to setup environment
+-------------------------------------
+
+Install conda
+    `wget https://repo.anaconda.com/archive/Anaconda3-2025.12-1-Linux-x86_64.sh`
+    `bash Anaconda3-2025.12-1-Linux-x86_64.sh`
+    (Run as user; installs to ~/anaconda3; accept .bashrc edits)
+
+conda create -n pflca python=3.11 or 3.12
+
+pip install git+https://github.com/FLCAC-admin/fedelemflowlist
+
+pip install git+https://github.com/NETL-RIC/netlolca#egg=netlolca
+
+pip install git+https://github.com/prommis/prommis.git
+
+pip install git+https://github.com/CCSI-Toolset/FOQUS
+
+conda install --yes -c conda-forge -c CCSI-Toolset psuade-lite=1.9
+
+conda install -y -c conda-forge nlopt
+
+idaes get-extensions
+
+conda install -y -c conda-forge ipopt
+
+pip install pymatgen==2025.10.7 (should be handled in lca-prommis)
+
+pip intall tabulate==0.9.0 
+
+pip install matplotlib==3.10.8 (should be automatically added in earlier steps)
+
+conda install pubchempy==1.0.5 (should be handled in lca-prommis)
+
+conda install pyqt
+
+03/10/2026
+----------
+
+Goal:
+    * Extract optimization results
+        - my_solver.bestSoFarList --> list of tuples (run number, result)
+            - find lowest result and get the associated run number      
+    * Print results - Use the 'run number' to:
+        - 
+    * Pass the best run results to openLCA
+

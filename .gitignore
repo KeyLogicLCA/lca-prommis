@@ -8,6 +8,8 @@ personal_notes.txt
 output/
 output/lca_df.csv
 
+# Ignore the egg-info
+lca_prommis.egg-info
 
 # Ignore all sphynx documentation stuff
 docs

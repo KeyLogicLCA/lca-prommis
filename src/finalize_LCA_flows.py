@@ -486,6 +486,9 @@ def finalize_df(df: pd.DataFrame,
             except Exception as e:
                 print(f'Error generating UUID for {flow_name}: {e}')
 
+        if flow_type == 'Emissions to air':
+            flow_name = flow_name + ' emissions' #hotfix to distinguish resources from emissions    
+
         # Convert Heat flows to Natural Gas flows
         if flow_type == "Heat" or flow_name == "Heat":
             flow_name = "Natural Gas"

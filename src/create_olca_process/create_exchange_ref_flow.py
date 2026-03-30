@@ -59,7 +59,7 @@ __all__ = [
 ###############################################################################
 # FUNCTIONS
 ###############################################################################
-def create_exchange_ref_flow(client,flowName, amount, unit, isInput, isRef):
+def create_exchange_ref_flow(client,flowName, amount, amount_formula, unit, isInput, isRef):
     """Request from user the new flow or existing flow for the reference exchange.
     """
     # Get input from user
@@ -72,14 +72,14 @@ def create_exchange_ref_flow(client,flowName, amount, unit, isInput, isRef):
     choice = input("Enter your choice (1 or 2): ")
     if choice == "1":
         flow_uuid = search_and_select_flows(keywords=None, client=client)
-        return create_exchange_ref_existing_flow(client, flow_uuid, amount, unit)
+        return create_exchange_ref_existing_flow(client, flow_uuid, amount, amount_formula, unit)
     elif choice == "2":
-        return create_exchange_ref_new_flow(client, flowName, amount, unit, isInput, isRef)
+        return create_exchange_ref_new_flow(client, flowName, amount, amount_formula, unit, isInput, isRef)
     else:
         raise ValueError("Invalid choice")
 
 
-def create_exchange_ref_existing_flow(client, flow_uuid, amount, unit):
+def create_exchange_ref_existing_flow(client, flow_uuid, amount, amount_formula, unit):
     """
     Create and return an 'olca.Exchange' for PRODUCT or WASTE flows.
 
@@ -93,10 +93,19 @@ def create_exchange_ref_existing_flow(client, flow_uuid, amount, unit):
         The uuid of the process associated with the flow.
     amount : float
         The amount of the flow.
+    amount_formula : str
+        Formula for the flow amount.
     unit : str
         The unit of the flow.
     is_input : bool
         Whether the flow is an input or output.
+
+    Note
+    ----
+    Note on using amount and amount formula:
+        * If amount is provided and there is no need for a parameter to be defined, amount_formula can be None
+        * If both an amount and an amount formula are provided, the amount formula will be used (override the amount)
+            In this case, the amount will be ignored and can be considered redundant.
 
     Returns
     -------
@@ -127,6 +136,7 @@ def create_exchange_ref_existing_flow(client, flow_uuid, amount, unit):
     if exchange.unit is None:
         exchange.unit = o_units.unit_ref(unit.lower())
     exchange.amount = amount
+    exchange.amount_formula = amount_formula
     exchange.is_input = False
     exchange.is_quantitative_reference = True
 
@@ -136,6 +146,7 @@ def create_exchange_ref_existing_flow(client, flow_uuid, amount, unit):
 def create_exchange_ref_new_flow(client,
                                  flowName,
                                  amount,
+                                 amount_formula,
                                  unit,
                                  isInput,
                                  isRef):
@@ -190,7 +201,8 @@ def create_exchange_ref_new_flow(client,
         flow = flow_ref,
         flow_property = ex_flow_property_factor,
         unit = unit_obj,
-        amount = 1.0,
+        amount = amount,
+        amount_formula = amount_formula,
         is_input = isInput,
         is_quantitative_reference = isRef
     )
