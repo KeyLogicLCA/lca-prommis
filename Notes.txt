@@ -715,7 +715,7 @@ Notes on setting up the optimizer
 *   Then we need to assign the graph to that session
     e.g., my_session.graph = my_graph
     IMPORTANT CONSIDERATIONS
-        * here the we need to ensure that all the nodes and edges 
+        * here the we need to ensure that all the nodes and edges
         are assigned/included within that graph object
         Technically it should be
         Approaches:
@@ -746,7 +746,7 @@ Notes on setting up the optimizer
     **  Constraint                                                              --> In progress
 
 *   Setup solver options                                                        --> Done
-    Basically here everything is left the way it's set by default in 
+    Basically here everything is left the way it's set by default in
     the foqus GUI
 
     problem.solverOptions["NLopt"] = {
@@ -780,17 +780,17 @@ In contrained optimizations
             where   f(x) is the objective function
                     pf is the penalty form and is a function of (a) and (g(x))
 
-Penalty Factor: 
+Penalty Factor:
     - the penalty factor is assigned to the constraint
     - the penalty form (f(a,g(x))) depends on the constraint form selected by the user
-    - constraint forms options: Linear, Quadratic, Step -- 
+    - constraint forms options: Linear, Quadratic, Step --
     - see https://foqus.readthedocs.io/en/stable/chapt_opt/reference/optimization.html
         for more infomation on the different constraint forms
     - What is the significance of the penalty factor?
       The penalty is used to give a certain cost for violation of the constraints
         * If the penalty factor is too high
             The new objective function will be dominated by the constraint violation
-            The algorithm behavior --> focus on searching for feasibility 
+            The algorithm behavior --> focus on searching for feasibility
 
         * If the penalty factor is too low
             The objective function will be dominated by the main objective
@@ -798,12 +798,12 @@ Penalty Factor:
 
 Penalty Scale:
 
-- In the case where we have multiple objectives, there is a possibility that 
+- In the case where we have multiple objectives, there is a possibility that
     these objectives have different scales/magnitudes. For example obj_1 ranges between 10 and 15
     and obj_2 ranges between 0.1 and 0.2
 - In this case we need to define a penalty scale for each objective.
-    This helps the solver apply the constraint violation penalty differently to 
-    these different objective functions. 
+    This helps the solver apply the constraint violation penalty differently to
+    these different objective functions.
 
     Special cases:
     - Single objective optimization with constraints
@@ -815,10 +815,10 @@ Penalty Scale:
 
 - How to set the penalty factor?
     - There is no default value for penalty factor
-    - [FH] personal thoughts: 
+    - [FH] personal thoughts:
         * This can be an iterative process
         * Start with a low penalty factor --> allows the algorithm to find many working solutions
-        * Gradually increase the penalty factor to force the algorithm into a solution that prioritizes 
+        * Gradually increase the penalty factor to force the algorithm into a solution that prioritizes
             feasibility while meeting objective
 
 - How to set the penalty scale?
@@ -858,7 +858,7 @@ conda install -y -c conda-forge ipopt
 
 pip install pymatgen==2025.10.7 (should be handled in lca-prommis)
 
-pip intall tabulate==0.9.0 
+pip intall tabulate==0.9.0
 
 pip install matplotlib==3.10.8 (should be automatically added in earlier steps)
 
@@ -872,8 +872,8 @@ conda install pyqt
 Goal:
     * Extract optimization results
         - my_solver.bestSoFarList --> list of tuples (run number, result)
-            - find lowest result and get the associated run number      
+            - find lowest result and get the associated run number
     * Print results - Use the 'run number' to:
-        - 
+        -
     * Pass the best run results to openLCA
 
