@@ -12,6 +12,7 @@ import datetime
 
 import pandas as pd
 import olca_schema as olca
+from olca_schema import ParameterScope
 
 from src.create_olca_process.search_flows_and_providers import search_and_select
 from src.create_olca_process.create_exchange_elementary_flow import create_exchange_elementary_flow
@@ -90,9 +91,13 @@ def create_new_process(client, df, process_name, process_description):
 
     # 4. Create exchanges
     exchanges = []
+    parameters = []
+    parameters_table = pd.DataFrame(columns=['parameter_name', 'parameter_description', 'parameter_value'])
+    count = 0
 
     # Loop through the dataframe, find reference product, and create exchanges
     for _, row in df.iterrows():
+        count+=1
         # Gives you the option to try again if you make a mistake
         while True:
             try:
@@ -101,14 +106,17 @@ def create_new_process(client, df, process_name, process_description):
                 amount = row['LCA_Amount']
                 is_input = row['Is_Input']
                 flow_uuid = row['UUID']
+                parameter = create_parameter(f"p{count}", f"Reference parameter for {product}",'', True, ParameterScope("PROCESS_SCOPE"), amount)
+                parameters.append(parameter)                
                 # TODO: add a check to see if there is more than one reference
                 # product. Just want to have a warning printed.
                 if row['Reference_Product']:
                     print("\n")
                     print(f"Creating exchange for reference product: {product}")
                     print("----------------------------------------")
-                    exchange = create_exchange_ref_flow(client, product, amount, unit, is_input, row['Reference_Product'])
+                    exchange = create_exchange_ref_flow(client, product, amount, parameter.name, unit, is_input, row['Reference_Product'])
                     exchanges.append(exchange)
+                    parameters_table.loc[count-1, ('parameter_name', 'parameter_description', 'parameter_value')] = (f"p{count}", product, amount)
                     # If reference flow, then we don't need to search for a
                     # process.
                     break
@@ -122,13 +130,14 @@ def create_new_process(client, df, process_name, process_description):
                         print("--------------------------------------")
                         try:
                             exchange = create_exchange_elementary_flow(
-                                client, flow_uuid, unit, amount, is_input
+                                client, flow_uuid, unit, amount, parameter.name, is_input
                             )
                             print(
                                 "Exchange created for elementary flow: "
                                 f"{product}"
                             )
                             exchanges.append(exchange)
+                            parameters_table.loc[count-1, ('parameter_name', 'parameter_description', 'parameter_value')] = (f"p{count}", product, amount)
                             break
                         except Exception as e:
                             print(
@@ -160,6 +169,7 @@ def create_new_process(client, df, process_name, process_description):
                                 flow_uuid,
                                 provider_uuid,
                                 amount,
+                                parameter.name,
                                 unit,
                                 is_input
                             )
@@ -168,6 +178,7 @@ def create_new_process(client, df, process_name, process_description):
                                 f"flow: {product}"
                             )
                             exchanges.append(exchange)
+                            parameters_table.loc[count-1, ('parameter_name', 'parameter_description', 'parameter_value')] = (f"p{count}", product, amount)
                             break
                         except Exception as e:
                             print(
@@ -199,6 +210,7 @@ def create_new_process(client, df, process_name, process_description):
                                 flow_uuid,
                                 provider_uuid,
                                 amount,
+                                parameter.name,
                                 unit,
                                 is_input
                             )
@@ -207,6 +219,7 @@ def create_new_process(client, df, process_name, process_description):
                                 f"flow: {product}"
                             )
                             exchanges.append(exchange)
+                            parameters_table.loc[count-1, ('parameter_name', 'parameter_description', 'parameter_value')] = (f"p{count}", product, amount)
                             break
                         except Exception as e:
                             print(
@@ -233,13 +246,14 @@ def create_new_process(client, df, process_name, process_description):
                     break
 
     # 5. Create process
+    process.parameters = parameters
     process.exchanges = exchanges
 
     # 6. Save process to openLCA
     created_process = client.client.put(process)
     print(f"Successfully created process: {process_name}")
     print(f"Process saved successfully to openLCA database!")
-    return created_process
+    return created_process, parameters_table
 
 
 def read_dataframe(df):
@@ -307,3 +321,213 @@ def generate_id(prefix: str = "entity") -> str:
         Unique ID (36-character UUID string).
     """
     return str(uuid.uuid4())
+
+def create_parameter(
+    name, 
+    description, 
+    formula, 
+    is_input, 
+    scope, 
+    value):
+    """ Helper function to create a parameter in openLCA.
+    The function is generic and can be used to create local, 
+    global, or impact parameters. 
+
+    Parameters
+    ----------
+    name : str
+        The name of the parameter.
+    description : str
+        The description of the parameter.
+    formula : str
+        The formula of the parameter.
+        only applicable if the parameter is not an input parameter
+    is_input : bool
+        Whether the parameter is an input parameter.
+    scope : str
+        The scope of the parameter.
+        Options: 'PROCESS_SCOPE', 'IMPACT_SCOPE', 'GLOBAL_SCOPE'
+    value : float
+        The value of the parameter.
+    """ 
+    parameter = olca.Parameter(
+        name = name,
+        description = description,
+        formula = formula,
+        is_input_parameter = is_input,
+        parameter_scope = scope,
+        value = value
+    )
+    return parameter
+
+#
+# TESTING
+#
+
+if __name__ == "__main__":
+    
+    sample_df = pd.read_csv("/home/franc/lca-prommis-francis/src/create_olca_process/lca_df_finalized.csv")
+    
+    netl = NetlOlca()
+    netl.connect()
+    netl.read()
+   
+    process_name = "p_test_final"
+    process_description = "This is a test process"
+    process = create_empty_process(netl, process_name, process_description)
+
+    exchange_database = create_exchange_database(netl)
+
+    exchanges = []
+    parameters = []
+    count = 0
+    for _, row in sample_df.iterrows():
+        count+=1
+        # Gives you the option to try again if you make a mistake
+        while True:
+            try:
+                product = row['Flow_Name']
+                unit = row['LCA_Unit']
+                amount = row['LCA_Amount']
+                is_input = row['Is_Input']
+                flow_uuid = row['UUID']
+                parameter = create_parameter(f"p{count}", f"Reference parameter for {product}",'', True, ParameterScope("PROCESS_SCOPE"), amount)
+                parameters.append(parameter)
+                # TODO: add a check to see if there is more than one reference
+                # product. Just want to have a warning printed.
+                if row['Reference_Product']:    
+                    print("\n")
+                    print(f"Creating exchange for reference product: {product}")
+                    print("----------------------------------------")
+                    exchange = create_exchange_ref_flow(netl, product, amount, parameter.name, unit, is_input, row['Reference_Product'])
+                    exchanges.append(exchange)
+                    # If reference flow, then we don't need to search for a
+                    # process.
+                    break
+                else:
+                    # If not elementary flow, the we need to identify flow
+                    # category, search for a flow and process/provider to
+                    # create an exchange.
+                    if row['Category'].lower() == 'elementary flows':
+                        print("\n")
+                        print(f"Creating exchange for elementary flow: {product}")
+                        print("--------------------------------------")
+                        try:
+                            exchange = create_exchange_elementary_flow(
+                                netl, flow_uuid, unit, amount, parameter.name, is_input
+                            )
+                            print(
+                                "Exchange created for elementary flow: "
+                                f"{product}"
+                            )
+                            exchanges.append(exchange)
+                            break
+                        except Exception as e:
+                            print(
+                                "Error creating exchange for elementary "
+                                f"flow: {e}"
+                            )
+                            break
+                    # If product flow, then we need to search for a process
+                    elif (row['Category'].lower() == 'technosphere flows'
+                            or row['Category'].lower() == 'product flows'):
+                        print("\n")
+                        print(f"Creating exchange for product flow: {product}")
+                        print("-----------------------------------")
+                        flow_uuid, provider_uuid = search_and_select(
+                            exchanges_df=exchange_database,
+                            keywords=product,
+                            flow_type_str='product',
+                            client=netl,
+                            unit=unit
+                        )
+                        # Allows user to skip the flow
+                        if flow_uuid == 'skip':
+                            print(f"Skipping flow: {product}")
+                            break
+                        try:
+                            exchange = create_exchange_pr_wa_flow(
+                                netl,
+                                flow_uuid,
+                                provider_uuid,
+                                amount,
+                                parameter.name,
+                                unit,
+                                is_input
+                            )
+                            print(
+                                "Exchange created for product "
+                                f"flow: {product}"
+                            )
+                            exchanges.append(exchange)
+                            break
+                        except Exception as e:
+                            print(
+                                f"Error creating exchange for product flow: {e}"
+                            )
+                            break
+                    # If waste flow, then we need to search for a process.
+                    elif row['Category'].lower() == 'waste flows':
+                        print("\n")
+                        print(f"Creating exchange for waste flow: {product}")
+                        print("---------------------------------")
+                        flow_uuid, provider_uuid = search_and_select(
+                            exchanges_df=exchange_database,
+                            keywords=product,
+                            flow_type_str='waste',
+                            client=netl,
+                            unit=unit
+                        )
+                        # Allows user to skip the flow
+                        if flow_uuid == 'skip':
+                            print(f"Skipping flow: {product}")
+                            break
+                        try:
+                            exchange = create_exchange_pr_wa_flow(
+                                netl,
+                                flow_uuid,
+                                provider_uuid,
+                                amount,
+                                parameter.name,
+                                unit,
+                                is_input
+                            )
+                            print(
+                                "Exchange created for waste "
+                                f"flow: {product}"
+                            )
+                            exchanges.append(exchange)
+                            break
+                        except Exception as e:
+                            print(
+                                f"Error creating exchange for waste flow: {e}"
+                            )
+                            break
+                    else:
+                        raise ValueError(
+                            f"Invalid category: {row['Category']}. "
+                            "Must be one of: elementary flows, product flows, "
+                            "technosphere flows, waste flows."
+                        )
+            # Add handle errors if the row is missing a required column:
+            # product, amount, unit, is_input, reference_product, and/or
+            # category.
+            except Exception as e:
+                print(f"Error creating exchange for flow: {e}")
+                retry_response = input(
+                    "Do you want to try again? (y/n): "
+                ).strip()
+                if retry_response.lower().startswith('y'):
+                    continue
+                elif retry_response.lower().startswith('n'):
+                    break
+    # 5. Create process
+    process.parameters = parameters
+    process.exchanges = exchanges
+
+
+    # 6. Save process to openLCA
+    created_process = netl.client.put(process)
+    print(f"Successfully created process: {process_name}")
+    print(f"Process saved successfully to openLCA database!")
+    

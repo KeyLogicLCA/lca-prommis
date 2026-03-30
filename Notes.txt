@@ -704,3 +704,176 @@ Headless FOQUS Notes
     # e.g.
     script = """print ("hello world")"""
     prommis_node.pythonCode = script
+
+2/11/2026
+---------
+
+Notes on setting up the optimizer
+
+*   The optimizer has to be setup at the session level
+    So we need to setup or initiate a session first
+*   Then we need to assign the graph to that session
+    e.g., my_session.graph = my_graph
+    IMPORTANT CONSIDERATIONS
+        * here the we need to ensure that all the nodes and edges 
+        are assigned/included within that graph object
+        Technically it should be
+        Approaches:
+        * Approach 1 - either change foques class and base it all on
+        the session object rather than the graph object
+        * Approach 2 - Develop a separate class for the session
+        * Approach 3 - Directly use the session class from the foqus
+        class - 'foqus_lib.framework.session.session'
+*   The next action item would be to setup the optimizer
+    Assuming the session is created - 'my_session'                              --> Done
+
+*   configure optimization problem
+    problem = my_session.optProblem                                             --> Done
+
+*   setup the solver of the problem
+    problem.solver = "NLopt"                                                    --> Done
+
+*   Next define the optimizer inputs
+    **  Decision variables
+        problem.v = ["prommis_node.inVars[0]","prommis_node.inVars[1]"]         --> Done - nf.dv isinstance to be checked
+        #not sure of the syntax
+    **  Objective Function
+        from foqus_lib.framework.optimizer.problem import objectiveFunction
+        objective_1 = objectiveFunction()
+        objective_1.pycode = f[olca_node]['GWP'] #this would minimize GWP
+        problem.obj = [objective_1]
+        problem.objtype = problem.OBJ_TYPE_EVAL                                 --> Done with TODOs
+    **  Constraint                                                              --> In progress
+
+*   Setup solver options                                                        --> Done
+    Basically here everything is left the way it's set by default in 
+    the foqus GUI
+
+    problem.solverOptions["NLopt"] = {
+    "Solver": "BOBYQA",   # Algorithm: BOBYQA, COBYLA, DIRECT, etc.
+    "maxeval": 100,       # Maximum function evaluations
+    "maxtime": 60,        # Maximum time in hours (or float hours)
+    "tolfunrel": 1e-4,    # Relative tolerance
+    "lower": 0.0,         # Lower bound (scaled 0-10 typically)
+    "upper": 10.0         # Upper bound
+    }
+
+*   solver_1 = problem.run(my_session)                                          --> Done
+
+*   wait for the optimization to completes                                      --> Done
+    solver_1.join()
+    print ("Optimization Complete")
+
+2/25/2026
+---------
+
+Notes on penalty scale and penalty factor
+
+In contrained optimizations
+    * If a constraint is met, the objective function remains the same.
+    * If a constraint is not met, the objective function is modified
+        => it is penalized
+        In FOQUS, we have inquality constraints of the form g(x) <= 0
+        where the user defines what g(x) is (using a Python expression).
+        If a constraint is not met, the objective function is revised:
+            min Obj(x, a) = f(x) + pf
+            where   f(x) is the objective function
+                    pf is the penalty form and is a function of (a) and (g(x))
+
+Penalty Factor: 
+    - the penalty factor is assigned to the constraint
+    - the penalty form (f(a,g(x))) depends on the constraint form selected by the user
+    - constraint forms options: Linear, Quadratic, Step -- 
+    - see https://foqus.readthedocs.io/en/stable/chapt_opt/reference/optimization.html
+        for more infomation on the different constraint forms
+    - What is the significance of the penalty factor?
+      The penalty is used to give a certain cost for violation of the constraints
+        * If the penalty factor is too high
+            The new objective function will be dominated by the constraint violation
+            The algorithm behavior --> focus on searching for feasibility 
+
+        * If the penalty factor is too low
+            The objective function will be dominated by the main objective
+            The algorithm can - in some way - ignore the constraints
+
+Penalty Scale:
+
+- In the case where we have multiple objectives, there is a possibility that 
+    these objectives have different scales/magnitudes. For example obj_1 ranges between 10 and 15
+    and obj_2 ranges between 0.1 and 0.2
+- In this case we need to define a penalty scale for each objective.
+    This helps the solver apply the constraint violation penalty differently to 
+    these different objective functions. 
+
+    Special cases:
+    - Single objective optimization with constraints
+        * Penalty Scale = 1
+    - Single objective optimization without constraints
+        * Penalty Scale has no effect on the optimiation results
+    - Multiple objective optimization without constraints
+        * Penalty Scale has no effect on the optimiation results
+
+- How to set the penalty factor?
+    - There is no default value for penalty factor
+    - [FH] personal thoughts: 
+        * This can be an iterative process
+        * Start with a low penalty factor --> allows the algorithm to find many working solutions
+        * Gradually increase the penalty factor to force the algorithm into a solution that prioritizes 
+            feasibility while meeting objective
+
+- How to set the penalty scale?
+    - Default is 10
+    - Methodology - not explicitly explained in FOQUS Documentation
+
+References:
+    1- https://foqus.readthedocs.io/en/stable/chapt_opt/reference/optimization.html
+    2- https://app.readthedocs.org/projects/foqus/downloads/pdf/latest/
+    3- https://doi.org/10.1016/j.egypro.2014.11.113
+
+New instructions to setup environment
+-------------------------------------
+
+Install conda
+    `wget https://repo.anaconda.com/archive/Anaconda3-2025.12-1-Linux-x86_64.sh`
+    `bash Anaconda3-2025.12-1-Linux-x86_64.sh`
+    (Run as user; installs to ~/anaconda3; accept .bashrc edits)
+
+conda create -n pflca python=3.11 or 3.12
+
+pip install git+https://github.com/FLCAC-admin/fedelemflowlist
+
+pip install git+https://github.com/NETL-RIC/netlolca#egg=netlolca
+
+pip install git+https://github.com/prommis/prommis.git
+
+pip install git+https://github.com/CCSI-Toolset/FOQUS
+
+conda install --yes -c conda-forge -c CCSI-Toolset psuade-lite=1.9
+
+conda install -y -c conda-forge nlopt
+
+idaes get-extensions
+
+conda install -y -c conda-forge ipopt
+
+pip install pymatgen==2025.10.7 (should be handled in lca-prommis)
+
+pip intall tabulate==0.9.0 
+
+pip install matplotlib==3.10.8 (should be automatically added in earlier steps)
+
+conda install pubchempy==1.0.5 (should be handled in lca-prommis)
+
+conda install pyqt
+
+03/10/2026
+----------
+
+Goal:
+    * Extract optimization results
+        - my_solver.bestSoFarList --> list of tuples (run number, result)
+            - find lowest result and get the associated run number      
+    * Print results - Use the 'run number' to:
+        - 
+    * Pass the best run results to openLCA
+

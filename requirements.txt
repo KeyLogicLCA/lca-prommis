@@ -1,5 +1,6 @@
 git+https://github.com/USEPA/Federal-LCA-Commons-Elementary-Flow-List#egg=fedelemflowlist
 git+https://github.com/NETL-RIC/netlolca#egg=netlolca
+git+https://github.com/prommis/prommis.git
 numpy
 pubchempy
 pymatgen

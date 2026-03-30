@@ -48,6 +48,7 @@ def create_exchange_pr_wa_flow(client,
                                flow_uuid,
                                provider_uuid,
                                amount,
+                               amount_formula,
                                unit,
                                is_input):
     """
@@ -63,6 +64,8 @@ def create_exchange_pr_wa_flow(client,
         The uuid of the process associated with the flow.
     amount : float
         The amount of the flow.
+    amount_formula : str
+        Formula for the flow amount.
     unit : str
         The unit of the flow.
     is_input : bool
@@ -72,6 +75,13 @@ def create_exchange_pr_wa_flow(client,
     -------
     olca-schema.Exchange
         An Exchange object instance.
+
+    Note
+    ----
+    Note on using amount and amount formula:
+        * If amount is provided and there is no need for a parameter to be defined, amount_formula can be None
+        * If both an amount and an amount formula are provided, the amount formula will be used (override the amount)
+            In this case, the amount will be ignored and can be considered redundant.
 
     Raises
     ------
@@ -105,6 +115,7 @@ def create_exchange_pr_wa_flow(client,
     if exchange.unit is None:
         exchange.unit = o_units.unit_ref(unit.lower())
     exchange.amount = float(amount)
+    exchange.amount_formula = amount_formula
     exchange.is_input = is_input
     exchange.default_provider = olca.Ref.from_dict(
         {"@type": "Process", "@id": provider_uuid}
